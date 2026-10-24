@@ -1,19 +1,3 @@
-@font-face {
-  font-family: "Sorts Mill Goudy";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("assets/fonts/sorts-mill-goudy-regular.ttf") format("truetype");
-}
-
-@font-face {
-  font-family: "Sorts Mill Goudy";
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url("assets/fonts/sorts-mill-goudy-italic.ttf") format("truetype");
-}
-
 :root {
   --paper: #f4fafb;
   --paper-bright: #fbffff;
@@ -28,7 +12,6 @@
   --acid: #d8ff3e;
   --display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC",
     serif;
-  --editorial: "Sorts Mill Goudy", "Iowan Old Style", "Baskerville", serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -457,39 +440,17 @@ p {
 }
 
 h1 {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: clamp(1.8rem, 3.5vw, 3rem);
-  color: transparent;
-  font-family: var(--editorial);
-  font-size: clamp(3.25rem, 4.7vw, 5.6rem);
-  font-style: normal;
-  font-weight: 400;
-  line-height: 1.06;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  -webkit-text-stroke: 1.25px #001e31;
-  transform: skewX(-9deg);
-  transform-origin: left;
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
 }
 
-.hero-title span {
+.hero-title {
+  width: min(100%, 50.6rem);
+}
+
+.hero-title img {
   display: block;
-}
-
-.hero-copy-bottom {
-  max-width: 27rem;
-  margin-bottom: clamp(2.2rem, 4vw, 3.5rem);
-}
-
-.hero-intro {
-  max-width: 25rem;
-  margin: 0;
-  color: #47646f;
-  font-size: 0.96rem;
-  line-height: 1.9;
+  width: 100%;
+  height: auto;
 }
 
 .hero-actions {
@@ -744,46 +705,6 @@ h1 {
 .cross-two {
   right: 12%;
   bottom: 4%;
-}
-
-.hero-meta {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  width: 100%;
-  max-width: 95rem;
-  margin: 0 auto;
-  padding: 1.5rem 0;
-  border-top: 1px solid rgba(6, 31, 44, 0.14);
-}
-
-.meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.meta-item:nth-child(2) {
-  padding-left: clamp(1rem, 5vw, 5rem);
-  border-left: 1px solid var(--line);
-}
-
-.meta-item:nth-child(3) {
-  align-items: flex-end;
-}
-
-.meta-label {
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
-}
-
-.meta-value {
-  width: fit-content;
-  font-family: var(--mono);
-  font-size: 0.74rem;
 }
 
 .ticker {
@@ -1256,19 +1177,11 @@ h1 {
     z-index: 2;
   }
 
-  .hero-copy-bottom {
-    max-width: 38rem;
-  }
-
   .hero-art {
     width: min(48vw, 20rem);
     margin-top: -3rem;
     margin-right: 1rem;
     justify-self: end;
-  }
-
-  .hero-meta {
-    margin-top: 1.5rem;
   }
 
   .about-grid {
@@ -1386,21 +1299,10 @@ h1 {
 
   h1 {
     margin-bottom: 2.5rem;
-    font-size: clamp(2.25rem, 9.6vw, 3.8rem);
-    line-height: 0.97;
-    white-space: normal;
   }
 
   .hero-title {
-    -webkit-text-stroke-width: 1px;
-  }
-
-  .hero-copy-bottom {
-    margin-bottom: 2.25rem;
-  }
-
-  .hero-intro {
-    font-size: 1rem;
+    width: 100%;
   }
 
   .hero-art {
@@ -1411,22 +1313,6 @@ h1 {
 
   .orbit-note {
     display: none;
-  }
-
-  .hero-meta {
-    grid-template-columns: 1fr 1fr;
-    row-gap: 1.8rem;
-  }
-
-  .meta-item:nth-child(2) {
-    padding-left: 1rem;
-  }
-
-  .meta-item:nth-child(3) {
-    align-items: flex-start;
-    grid-column: 1 / -1;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
   }
 
   .section-heading {
