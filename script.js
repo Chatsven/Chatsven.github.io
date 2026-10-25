@@ -1,6 +1,3 @@
-const year = document.querySelector("#year");
-const copyButton = document.querySelector(".copy-button");
-const copyStatus = document.querySelector(".copy-status");
 const siteHeader = document.querySelector("[data-site-header]");
 const navToggle = document.querySelector(".nav-toggle");
 const nav = document.querySelector("#site-nav");
@@ -8,8 +5,6 @@ const navLinks = [...document.querySelectorAll("[data-nav-section]")];
 const navSections = navLinks
   .map((link) => document.querySelector(`#${link.dataset.navSection}`))
   .filter(Boolean);
-
-if (year) year.textContent = new Date().getFullYear();
 
 const isEditableTarget = (target) =>
   target instanceof Element &&
@@ -50,7 +45,7 @@ const anchorOffset = 88;
 let anchorAnimationFrame = 0;
 
 const resolveAnchorElement = (target) =>
-  target.querySelector(".section-heading, .contact-top") ?? target;
+  target.querySelector(".section-heading") ?? target;
 
 const getLayoutTop = (element) => {
   const transformValue = window.getComputedStyle(element).transform;
@@ -584,18 +579,3 @@ window.addEventListener(
 
 window.addEventListener("resize", updateHeader);
 updateHeader();
-
-copyButton.addEventListener("click", async () => {
-  const email = copyButton.dataset.copy;
-
-  try {
-    await navigator.clipboard.writeText(email);
-    copyStatus.textContent = "已复制";
-  } catch {
-    copyStatus.textContent = email;
-  }
-
-  window.setTimeout(() => {
-    copyStatus.textContent = "";
-  }, 2000);
-});
