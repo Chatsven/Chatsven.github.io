@@ -311,10 +311,11 @@ if (hero && gridCanvas) {
           targetY: 0,
           x: 0,
           y: 0,
-          previousX: 0,
-          previousY: 0,
+          trailX: 0,
+          trailY: 0,
           targetSet: false,
           lastFrameTime: performance.now(),
+          lastActivityTime: 0,
         };
 
         gl.useProgram(program);
@@ -344,7 +345,8 @@ if (hero && gridCanvas) {
           );
           state.lastFrameTime = time;
           const positionEase = 1 - Math.exp(-elapsed * 16);
-          const strengthEase = 1 - Math.exp(-elapsed * 9);
+          const trailEase = 1 - Math.exp(-elapsed * 4);
+          const strengthEase = 1 - Math.exp(-elapsed * 22);
           const nextX = state.x + (state.targetX - state.x) * positionEase;
           const nextY = state.y + (state.targetY - state.y) * positionEase;
           const velocity =
@@ -354,10 +356,20 @@ if (hero && gridCanvas) {
                 1100
               : 0;
 
-          state.previousX = state.x;
-          state.previousY = state.y;
+          state.trailX += (nextX - state.trailX) * trailEase;
+          state.trailY += (nextY - state.trailY) * trailEase;
           state.x = nextX;
           state.y = nextY;
+          const idleProgress = Math.min(
+            Math.max((time - state.lastActivityTime) / 1000, 0),
+            1,
+          );
+          const fadeProgress = Math.min(
+            Math.max((idleProgress - 0.22) / 0.78, 0),
+            1,
+          );
+          state.targetStrength =
+            1 - fadeProgress * fadeProgress * (3 - 2 * fadeProgress);
           state.motion +=
             (Math.min(velocity, 1) - state.motion) * strengthEase;
           state.strength +=
@@ -367,8 +379,8 @@ if (hero && gridCanvas) {
           gl.uniform2f(uniforms.pointer, state.x, state.y);
           gl.uniform2f(
             uniforms.previousPointer,
-            state.previousX,
-            state.previousY,
+            state.trailX,
+            state.trailY,
           );
           gl.uniform1f(uniforms.time, time / 1000);
           gl.uniform1f(uniforms.strength, state.strength);
@@ -421,11 +433,11 @@ if (hero && gridCanvas) {
             if (!state.targetSet) {
               state.x = x;
               state.y = y;
-              state.previousX = x;
-              state.previousY = y;
+              state.trailX = x;
+              state.trailY = y;
               state.targetSet = true;
             }
-            state.targetStrength = 1;
+            state.lastActivityTime = performance.now();
             hero.classList.add("grid-is-active");
             startRendering();
           });
@@ -436,14 +448,14 @@ if (hero && gridCanvas) {
               const bounds = hero.getBoundingClientRect();
               state.targetX = event.clientX - bounds.left;
               state.targetY = event.clientY - bounds.top;
-              state.targetStrength = 1;
+              state.lastActivityTime = performance.now();
               startRendering();
             },
             { passive: true },
           );
 
           hero.addEventListener("pointerleave", () => {
-            state.targetStrength = 0;
+            state.lastActivityTime = performance.now();
             state.targetSet = false;
             startRendering();
           });
