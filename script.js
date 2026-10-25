@@ -18,19 +18,9 @@ const reducedMotion = window.matchMedia(
 const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
-let lastObservedScrollY = window.scrollY;
-let moduleSnapTimer = 0;
 
 const resolveAnchorElement = (target) =>
   target.querySelector(".section-heading, .contact-top") ?? target;
-
-const moduleSnapMedia = window.matchMedia(
-  "(min-width: 1024px) and (pointer: fine)",
-);
-const moduleSnapElements = [
-  document.querySelector(".hero"),
-  ...document.querySelectorAll(".section-heading, .contact-top"),
-].filter(Boolean);
 
 const getLayoutTop = (element) => {
   const transformValue = window.getComputedStyle(element).transform;
@@ -44,23 +34,6 @@ const getLayoutTop = (element) => {
     window.scrollY -
     transformOffset
   );
-};
-
-const getModuleSnapStops = () => {
-  const maxScrollY = Math.max(
-    0,
-    document.documentElement.scrollHeight - window.innerHeight,
-  );
-  const stops = moduleSnapElements.map((element) => {
-    const targetY = element.classList.contains("hero")
-      ? 0
-      : getLayoutTop(element) - anchorOffset;
-
-    return Math.min(maxScrollY, Math.max(0, targetY));
-  });
-
-  return [...new Set(stops.map((stop) => Math.round(stop * 10) / 10))]
-    .sort((first, second) => first - second);
 };
 
 const cancelAnchorAnimation = () => {
@@ -83,7 +56,6 @@ const dampedScrollToY = (requestedTargetY) => {
 
   if (reducedMotion) {
     window.scrollTo(0, targetY);
-    lastObservedScrollY = targetY;
     return;
   }
 
@@ -106,7 +78,6 @@ const dampedScrollToY = (requestedTargetY) => {
 
     if (Math.abs(displacement) < 0.5 && Math.abs(velocity) < 0.5) {
       window.scrollTo(0, targetY);
-      lastObservedScrollY = targetY;
       anchorAnimationFrame = 0;
       return;
     }
@@ -125,44 +96,6 @@ const dampedScrollTo = (target) => {
 
   dampedScrollToY(targetY);
 };
-
-const scheduleModuleSnap = () => {
-  window.clearTimeout(moduleSnapTimer);
-
-  if (!moduleSnapMedia.matches) return;
-
-  moduleSnapTimer = window.setTimeout(() => {
-    if (anchorAnimationFrame) return;
-
-    const currentScrollY = window.scrollY;
-    const nearestStop = getModuleSnapStops().reduce(
-      (nearest, stop) =>
-        Math.abs(stop - currentScrollY) <
-        Math.abs(nearest - currentScrollY)
-          ? stop
-          : nearest,
-      0,
-    );
-
-    if (Math.abs(nearestStop - currentScrollY) > 2) {
-      dampedScrollToY(nearestStop);
-    }
-  }, 220);
-};
-
-window.addEventListener(
-  "scroll",
-  () => {
-    if (anchorAnimationFrame) return;
-
-    const currentScrollY = window.scrollY;
-    if (Math.abs(currentScrollY - lastObservedScrollY) < 0.5) return;
-
-    lastObservedScrollY = currentScrollY;
-    scheduleModuleSnap();
-  },
-  { passive: true },
-);
 
 anchorLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -187,18 +120,12 @@ anchorLinks.forEach((link) => {
 
 window.addEventListener(
   "wheel",
-  () => {
-    cancelAnchorAnimation();
-    scheduleModuleSnap();
-  },
+  cancelAnchorAnimation,
   { passive: true },
 );
 window.addEventListener(
   "touchstart",
-  () => {
-    lastObservedScrollY = window.scrollY;
-    cancelAnchorAnimation();
-  },
+  cancelAnchorAnimation,
   { passive: true },
 );
 

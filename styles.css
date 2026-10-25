@@ -1173,6 +1173,71 @@ h1 {
   justify-self: end;
 }
 
+@media (min-width: 901px) and (pointer: fine) {
+  html {
+    scroll-snap-type: y mandatory;
+  }
+
+  .hero,
+  .section,
+  .work,
+  .contact {
+    height: 100svh;
+    min-height: 100svh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: clamp(5rem, 8vh, 6rem);
+    padding-bottom: clamp(2rem, 4vh, 3rem);
+  }
+
+  .work {
+    display: flex;
+    align-items: center;
+  }
+
+  .work-inner {
+    padding-top: clamp(5rem, 8vh, 6rem);
+    padding-bottom: clamp(2rem, 4vh, 3rem);
+  }
+
+  .about-grid {
+    padding-top: clamp(2rem, 4vh, 3rem);
+    padding-bottom: clamp(2rem, 4vh, 3rem);
+  }
+
+  .principles {
+    margin-top: clamp(1.5rem, 3vh, 2rem);
+  }
+
+  .principle {
+    min-height: 13rem;
+  }
+
+  .principle-number {
+    margin-bottom: 3rem;
+  }
+
+  .project {
+    padding-top: clamp(2rem, 4vh, 3rem);
+    padding-bottom: clamp(2rem, 4vh, 3rem);
+  }
+
+  .contact {
+    height: calc(100svh - 8rem);
+    min-height: calc(100svh - 8rem);
+  }
+
+  .footer {
+    scroll-snap-align: end;
+  }
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(1.5rem);
