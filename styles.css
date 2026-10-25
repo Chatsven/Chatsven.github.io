@@ -4,12 +4,12 @@
   --ink: #061f2c;
   --muted: #667b83;
   --line: rgba(6, 31, 44, 0.15);
-  --accent: #ff5a3d;
+  --accent: #56c5df;
   --sky: #e0f7fc;
   --sky-deep: #d3f2fa;
   --cyan: #56c5df;
   --deep-cyan: #0c6b86;
-  --acid: #d8ff3e;
+  --acid: #b9f2fb;
   --display: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC",
     serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
@@ -296,7 +296,8 @@ button {
   width: 100%;
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(7.5rem, 12vh, 10rem) clamp(1.25rem, 5.5vw, 6rem) 1.6rem;
+  padding: clamp(6rem, 9vh, 7rem) clamp(1.25rem, 5.5vw, 6rem)
+    clamp(6rem, 12vh, 9rem);
   overflow: hidden;
   background: linear-gradient(
     -53.644deg,
@@ -373,8 +374,8 @@ button {
   height: 34rem;
   background: radial-gradient(
     circle,
-    rgba(255, 90, 61, 0.12) 0,
-    rgba(255, 90, 61, 0) 68%
+    rgba(86, 197, 223, 0.2) 0,
+    rgba(86, 197, 223, 0) 68%
   );
   content: "";
   pointer-events: none;
@@ -1299,7 +1300,7 @@ h1 {
   }
 
   .hero {
-    padding: 7.5rem 1.25rem 1.25rem;
+    padding: 6.25rem 1.25rem 4rem;
   }
 
   .hero-grid {
