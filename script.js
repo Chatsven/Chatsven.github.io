@@ -11,6 +11,36 @@ const navSections = navLinks
 
 year.textContent = new Date().getFullYear();
 
+const isEditableTarget = (target) =>
+  target instanceof Element &&
+  Boolean(
+    target.closest(
+      "input, textarea, select, [contenteditable='true']",
+    ),
+  );
+
+document.addEventListener("selectstart", (event) => {
+  if (!isEditableTarget(event.target)) event.preventDefault();
+});
+
+document.addEventListener("dragstart", (event) => {
+  if (!isEditableTarget(event.target)) event.preventDefault();
+});
+
+document.addEventListener("keydown", (event) => {
+  const isSelectAll =
+    (event.metaKey || event.ctrlKey) &&
+    event.key.toLowerCase() === "a";
+
+  if (isSelectAll && !isEditableTarget(event.target)) {
+    event.preventDefault();
+  }
+});
+
+document.addEventListener("copy", (event) => {
+  if (!isEditableTarget(event.target)) event.preventDefault();
+});
+
 const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
