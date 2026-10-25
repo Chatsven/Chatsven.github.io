@@ -15,21 +15,81 @@ const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
-if (!reducedMotion && "Lenis" in window) {
-  const lenis = new Lenis({
-    autoRaf: true,
-    lerp: 0.075,
-    smoothWheel: true,
-    wheelMultiplier: 1.05,
-    anchors: {
-      offset: -88,
-    },
-    stopInertiaOnNavigate: true,
-    respectReducedMotion: true,
-  });
+const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
+const anchorOffset = 88;
+let anchorAnimationFrame = 0;
 
-  window.siteScroll = lenis;
+const cancelAnchorAnimation = () => {
+  if (!anchorAnimationFrame) return;
+  window.cancelAnimationFrame(anchorAnimationFrame);
+  anchorAnimationFrame = 0;
+};
+
+const dampedScrollTo = (target) => {
+  cancelAnchorAnimation();
+
+  const targetY = Math.max(
+    0,
+    target.getBoundingClientRect().top + window.scrollY - anchorOffset,
+  );
+
+  if (reducedMotion) {
+    window.scrollTo(0, targetY);
+    return;
+  }
+
+  let position = window.scrollY;
+  let velocity = 0;
+  let previousTime = performance.now();
+  const omega = 2 / 0.5;
+
+  const step = (time) => {
+    const delta = Math.min((time - previousTime) / 1000, 1 / 30);
+    previousTime = time;
+
+    const displacement = targetY - position;
+    const acceleration =
+      omega * omega * displacement - 2 * omega * velocity;
+
+    velocity += acceleration * delta;
+    position += velocity * delta;
+    window.scrollTo(0, position);
+
+    if (Math.abs(displacement) < 0.5 && Math.abs(velocity) < 0.5) {
+      window.scrollTo(0, targetY);
+      anchorAnimationFrame = 0;
+      return;
+    }
+
+    anchorAnimationFrame = window.requestAnimationFrame(step);
+  };
+
+  anchorAnimationFrame = window.requestAnimationFrame(step);
 }
+
+anchorLinks.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    if (
+      link.classList.contains("skip-link") ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
+
+    event.preventDefault();
+    history.pushState(null, "", link.getAttribute("href"));
+    dampedScrollTo(target);
+  });
+});
+
+window.addEventListener("wheel", cancelAnchorAnimation, { passive: true });
+window.addEventListener("touchstart", cancelAnchorAnimation, { passive: true });
 
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {

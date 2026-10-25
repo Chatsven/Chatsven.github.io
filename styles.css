@@ -25,11 +25,11 @@
 
 html {
   overflow-x: clip;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
-html.lenis {
-  scroll-behavior: auto;
+html:not(.js) {
+  scroll-behavior: smooth;
 }
 
 body {
