@@ -19,15 +19,49 @@ const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
 let lastObservedScrollY = window.scrollY;
-let manualScrollDirection = 0;
 let moduleSnapTimer = 0;
 
 const resolveAnchorElement = (target) =>
   target.querySelector(".section-heading, .contact-top") ?? target;
 
-const moduleSnapTargets = [
+const moduleSnapMedia = window.matchMedia(
+  "(min-width: 1024px) and (pointer: fine)",
+);
+const moduleSnapElements = [
+  document.querySelector(".hero"),
   ...document.querySelectorAll(".section-heading, .contact-top"),
-];
+].filter(Boolean);
+
+const getLayoutTop = (element) => {
+  const transformValue = window.getComputedStyle(element).transform;
+  const transformOffset =
+    transformValue === "none"
+      ? 0
+      : new DOMMatrixReadOnly(transformValue).m42;
+
+  return (
+    element.getBoundingClientRect().top +
+    window.scrollY -
+    transformOffset
+  );
+};
+
+const getModuleSnapStops = () => {
+  const maxScrollY = Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight,
+  );
+  const stops = moduleSnapElements.map((element) => {
+    const targetY = element.classList.contains("hero")
+      ? 0
+      : getLayoutTop(element) - anchorOffset;
+
+    return Math.min(maxScrollY, Math.max(0, targetY));
+  });
+
+  return [...new Set(stops.map((stop) => Math.round(stop * 10) / 10))]
+    .sort((first, second) => first - second);
+};
 
 const cancelAnchorAnimation = () => {
   if (!anchorAnimationFrame) return;
@@ -35,24 +69,21 @@ const cancelAnchorAnimation = () => {
   anchorAnimationFrame = 0;
 };
 
-const dampedScrollTo = (target) => {
+const dampedScrollToY = (requestedTargetY) => {
   cancelAnchorAnimation();
 
-  const anchor = resolveAnchorElement(target);
-  const transformValue = window.getComputedStyle(anchor).transform;
-  const transformOffset =
-    transformValue === "none"
-      ? 0
-      : new DOMMatrixReadOnly(transformValue).m42;
-  const layoutTop =
-    anchor.getBoundingClientRect().top + window.scrollY - transformOffset;
-  const targetY = Math.max(
+  const maxScrollY = Math.max(
     0,
-    layoutTop - anchorOffset,
+    document.documentElement.scrollHeight - window.innerHeight,
+  );
+  const targetY = Math.min(
+    maxScrollY,
+    Math.max(0, requestedTargetY),
   );
 
   if (reducedMotion) {
     window.scrollTo(0, targetY);
+    lastObservedScrollY = targetY;
     return;
   }
 
@@ -86,29 +117,37 @@ const dampedScrollTo = (target) => {
   anchorAnimationFrame = window.requestAnimationFrame(step);
 }
 
+const dampedScrollTo = (target) => {
+  const anchor = resolveAnchorElement(target);
+  const targetY = anchor.classList.contains("hero")
+    ? 0
+    : getLayoutTop(anchor) - anchorOffset;
+
+  dampedScrollToY(targetY);
+};
+
 const scheduleModuleSnap = () => {
   window.clearTimeout(moduleSnapTimer);
 
+  if (!moduleSnapMedia.matches) return;
+
   moduleSnapTimer = window.setTimeout(() => {
-    if (anchorAnimationFrame || manualScrollDirection <= 0) {
-      return;
-    }
+    if (anchorAnimationFrame) return;
 
-    const nextModule = moduleSnapTargets
-      .map((element) => ({
-        element,
-        top: element.getBoundingClientRect().top,
-      }))
-      .filter(
-        ({ top }) =>
-          top > anchorOffset + 12 && top < window.innerHeight - 1,
-      )
-      .sort((first, second) => first.top - second.top)[0];
+    const currentScrollY = window.scrollY;
+    const nearestStop = getModuleSnapStops().reduce(
+      (nearest, stop) =>
+        Math.abs(stop - currentScrollY) <
+        Math.abs(nearest - currentScrollY)
+          ? stop
+          : nearest,
+      0,
+    );
 
-    if (nextModule) {
-      dampedScrollTo(nextModule.element);
+    if (Math.abs(nearestStop - currentScrollY) > 2) {
+      dampedScrollToY(nearestStop);
     }
-  }, 180);
+  }, 220);
 };
 
 window.addEventListener(
@@ -119,9 +158,6 @@ window.addEventListener(
     const currentScrollY = window.scrollY;
     if (Math.abs(currentScrollY - lastObservedScrollY) < 0.5) return;
 
-    manualScrollDirection = Math.sign(
-      currentScrollY - lastObservedScrollY,
-    );
     lastObservedScrollY = currentScrollY;
     scheduleModuleSnap();
   },
@@ -151,8 +187,7 @@ anchorLinks.forEach((link) => {
 
 window.addEventListener(
   "wheel",
-  (event) => {
-    manualScrollDirection = Math.sign(event.deltaY);
+  () => {
     cancelAnchorAnimation();
     scheduleModuleSnap();
   },
