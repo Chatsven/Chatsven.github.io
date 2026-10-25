@@ -121,6 +121,8 @@ button {
   border: 1px solid transparent;
   border-radius: 1.5rem;
   transition:
+    width 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    max-width 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
     min-height 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
     padding 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
     background-color 260ms ease,
@@ -130,7 +132,8 @@ button {
 }
 
 .site-header.is-scrolled .header-shell {
-  max-width: none;
+  width: min(calc(100% - 2rem), 61.25rem);
+  max-width: 61.25rem;
   min-height: 3.5rem;
   padding: 0.3rem 0.45rem 0.3rem 1.25rem;
   background: rgba(248, 252, 255, 0.72);
