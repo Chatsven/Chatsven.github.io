@@ -9,7 +9,7 @@ const navSections = navLinks
   .map((link) => document.querySelector(`#${link.dataset.navSection}`))
   .filter(Boolean);
 
-year.textContent = new Date().getFullYear();
+if (year) year.textContent = new Date().getFullYear();
 
 const isEditableTarget = (target) =>
   target instanceof Element &&
