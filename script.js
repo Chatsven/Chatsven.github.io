@@ -18,9 +18,16 @@ const reducedMotion = window.matchMedia(
 const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
+let lastObservedScrollY = window.scrollY;
+let manualScrollDirection = 0;
+let moduleSnapTimer = 0;
 
 const resolveAnchorElement = (target) =>
   target.querySelector(".section-heading, .contact-top") ?? target;
+
+const moduleSnapTargets = [
+  ...document.querySelectorAll(".section-heading, .contact-top"),
+];
 
 const cancelAnchorAnimation = () => {
   if (!anchorAnimationFrame) return;
@@ -68,6 +75,7 @@ const dampedScrollTo = (target) => {
 
     if (Math.abs(displacement) < 0.5 && Math.abs(velocity) < 0.5) {
       window.scrollTo(0, targetY);
+      lastObservedScrollY = targetY;
       anchorAnimationFrame = 0;
       return;
     }
@@ -77,6 +85,48 @@ const dampedScrollTo = (target) => {
 
   anchorAnimationFrame = window.requestAnimationFrame(step);
 }
+
+const scheduleModuleSnap = () => {
+  window.clearTimeout(moduleSnapTimer);
+
+  moduleSnapTimer = window.setTimeout(() => {
+    if (anchorAnimationFrame || manualScrollDirection <= 0) {
+      return;
+    }
+
+    const nextModule = moduleSnapTargets
+      .map((element) => ({
+        element,
+        top: element.getBoundingClientRect().top,
+      }))
+      .filter(
+        ({ top }) =>
+          top > anchorOffset + 12 && top < window.innerHeight - 1,
+      )
+      .sort((first, second) => first.top - second.top)[0];
+
+    if (nextModule) {
+      dampedScrollTo(nextModule.element);
+    }
+  }, 180);
+};
+
+window.addEventListener(
+  "scroll",
+  () => {
+    if (anchorAnimationFrame) return;
+
+    const currentScrollY = window.scrollY;
+    if (Math.abs(currentScrollY - lastObservedScrollY) < 0.5) return;
+
+    manualScrollDirection = Math.sign(
+      currentScrollY - lastObservedScrollY,
+    );
+    lastObservedScrollY = currentScrollY;
+    scheduleModuleSnap();
+  },
+  { passive: true },
+);
 
 anchorLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -99,8 +149,23 @@ anchorLinks.forEach((link) => {
   });
 });
 
-window.addEventListener("wheel", cancelAnchorAnimation, { passive: true });
-window.addEventListener("touchstart", cancelAnchorAnimation, { passive: true });
+window.addEventListener(
+  "wheel",
+  (event) => {
+    manualScrollDirection = Math.sign(event.deltaY);
+    cancelAnchorAnimation();
+    scheduleModuleSnap();
+  },
+  { passive: true },
+);
+window.addEventListener(
+  "touchstart",
+  () => {
+    lastObservedScrollY = window.scrollY;
+    cancelAnchorAnimation();
+  },
+  { passive: true },
+);
 
 const initialAnchor = location.hash.length > 1
   ? document.querySelector(location.hash)
