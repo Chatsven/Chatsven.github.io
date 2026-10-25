@@ -1030,7 +1030,7 @@ h1 {
 
 .footer-meta {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 2rem;
   font-size: 0.923rem;
