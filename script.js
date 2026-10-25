@@ -142,209 +142,314 @@ const gridCanvas = document.querySelector(".hero-grid-canvas");
 const finePointer = window.matchMedia("(pointer: fine)").matches;
 
 if (hero && gridCanvas) {
-  const context = gridCanvas.getContext("2d");
-  const gridState = {
-    width: 0,
-    height: 0,
-    dpr: 1,
-    ripple: null,
-    frame: 0,
-    lastPointerX: null,
-    lastPointerY: null,
-  };
+  const gl = gridCanvas.getContext("webgl", {
+    alpha: true,
+    antialias: true,
+    premultipliedAlpha: false,
+    powerPreference: "high-performance",
+  });
 
-  const rippleDuration = 1000;
-  const minorSpacing = 48;
-  const majorSpacing = 192;
+  if (gl) {
+    const vertexSource = `
+      attribute vec2 a_position;
 
-  const getWarpedPoint = (x, y, time) => {
-    const ripple = gridState.ripple;
-    if (!ripple) return { x, y };
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+    const fragmentSource = `
+      precision highp float;
 
-    const progress = Math.min(
-      Math.max((time - ripple.startTime) / rippleDuration, 0),
-      1,
-    );
-    const deltaX = x - ripple.x;
-    const deltaY = y - ripple.y;
-    const distance = Math.hypot(deltaX, deltaY);
-    const easedProgress = 1 - (1 - progress) ** 3;
-    const front = 20 + easedProgress * Math.min(
-      360,
-      Math.max(gridState.width, gridState.height) * 0.34,
-    );
-    const band = 38 + progress * 52;
-    const signedDistance = distance - front;
-    const ring =
-      Math.exp(
-        -(signedDistance * signedDistance) /
-          (2 * band * band),
-      );
-    const fade = (1 - progress) ** 2;
+      uniform vec2 u_resolution;
+      uniform vec2 u_pointer;
+      uniform vec2 u_previousPointer;
+      uniform float u_time;
+      uniform float u_strength;
+      uniform float u_motion;
+      uniform float u_dpr;
 
-    if (ring < 0.002 || fade < 0.002) return { x, y };
+      float gridLine(
+        float coordinate,
+        float spacing,
+        float width,
+        float feather
+      ) {
+        float distanceToLine =
+          abs(fract(coordinate / spacing + 0.5) - 0.5) * spacing;
+        return 1.0 - smoothstep(
+          width,
+          width + feather,
+          distanceToLine
+        );
+      }
 
-    const angle = Math.atan2(deltaY, deltaX);
-    const amplitude = 28 * fade * ring;
-    const radialWave =
-      Math.sin((signedDistance / band) * Math.PI) * amplitude;
-    const tangentialWave =
-      Math.cos((signedDistance / band) * Math.PI) * amplitude * 0.24;
+      float segmentDistance(vec2 point, vec2 start, vec2 end) {
+        vec2 offset = point - start;
+        vec2 direction = end - start;
+        float progress = clamp(
+          dot(offset, direction) /
+            max(dot(direction, direction), 0.0001),
+          0.0,
+          1.0
+        );
+        return length(offset - direction * progress);
+      }
 
-    return {
-      x:
-        x +
-        Math.cos(angle) * radialWave -
-        Math.sin(angle) * tangentialWave,
-      y:
-        y +
-        Math.sin(angle) * radialWave +
-        Math.cos(angle) * tangentialWave,
+      void main() {
+        vec2 pixel = vec2(
+          gl_FragCoord.x / u_dpr,
+          u_resolution.y - gl_FragCoord.y / u_dpr
+        );
+        vec2 pointer = u_pointer;
+        vec2 previousPointer = u_previousPointer;
+        vec2 delta = pixel - pointer;
+        float distanceToPointer = length(delta);
+        vec2 direction = distanceToPointer > 0.001
+          ? delta / distanceToPointer
+          : vec2(1.0, 0.0);
+        vec2 tangent = vec2(-direction.y, direction.x);
+
+        float pointerField = exp(
+          -distanceToPointer * distanceToPointer / 105625.0
+        );
+        float trailDistance = segmentDistance(
+          pixel,
+          previousPointer,
+          pointer
+        );
+        float trail = exp(
+          -trailDistance * trailDistance / 7225.0
+        );
+        float motion = clamp(u_motion, 0.0, 1.0);
+        float field = max(pointerField, trail * motion * 0.82);
+        field *= u_strength;
+
+        float primaryWave = sin(
+          distanceToPointer * 0.047 - u_time * 3.1
+        );
+        float secondaryWave = sin(
+          distanceToPointer * 0.093 + u_time * 1.9
+        ) * 0.34;
+        vec2 travel = normalize(
+          pointer - previousPointer + vec2(0.0001, 0.0)
+        );
+        vec2 travelNormal = vec2(-travel.y, travel.x);
+        float wake = sin(trailDistance * 0.082 - u_time * 6.2);
+        float amplitude = field * (15.0 + motion * 10.0);
+
+        vec2 offset =
+          direction * (primaryWave + secondaryWave) * amplitude;
+        offset += travelNormal * wake * trail * motion * 18.0;
+
+        vec2 warped = pixel + offset;
+        float feather = 0.72 + field * 1.8;
+        float minor = max(
+          gridLine(warped.x, 48.0, 0.32, feather),
+          gridLine(warped.y, 48.0, 0.32, feather)
+        );
+        float major = max(
+          gridLine(warped.x, 192.0, 0.55, feather),
+          gridLine(warped.y, 192.0, 0.55, feather)
+        );
+        float alpha = max(minor * 0.095, major * 0.17);
+        vec3 color = vec3(10.0 / 255.0, 83.0 / 255.0, 104.0 / 255.0);
+
+        gl_FragColor = vec4(color, alpha);
+      }
+    `;
+
+    const compileShader = (type, source) => {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
     };
-  };
 
-  const drawGridLine = (isVertical, position, isMajor, time) => {
-    const lineLength = isVertical
-      ? gridState.height
-      : gridState.width;
-    const sample = isMajor ? 6 : 9;
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = compileShader(
+      gl.FRAGMENT_SHADER,
+      fragmentSource,
+    );
 
-    context.beginPath();
+    if (vertexShader && fragmentShader) {
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
 
-    for (let point = 0; point <= lineLength + sample; point += sample) {
-      const x = isVertical ? position : point;
-      const y = isVertical ? point : position;
-      const warped = getWarpedPoint(x, y, time);
-
-      if (point === 0) context.moveTo(warped.x, warped.y);
-      else context.lineTo(warped.x, warped.y);
-    }
-
-    context.strokeStyle = isMajor
-      ? "rgba(10, 83, 104, 0.17)"
-      : "rgba(10, 83, 104, 0.095)";
-    context.lineWidth = isMajor ? 0.9 : 0.65;
-    context.stroke();
-  };
-
-  const drawGrid = (time = performance.now()) => {
-    if (!context || !gridState.width || !gridState.height) return;
-
-    context.clearRect(0, 0, gridState.width, gridState.height);
-
-    const progress = gridState.ripple
-      ? Math.min(
-          Math.max(
-            (time - gridState.ripple.startTime) / rippleDuration,
-            0,
+      if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const positionLocation = gl.getAttribLocation(
+          program,
+          "a_position",
+        );
+        const uniforms = {
+          resolution: gl.getUniformLocation(program, "u_resolution"),
+          pointer: gl.getUniformLocation(program, "u_pointer"),
+          previousPointer: gl.getUniformLocation(
+            program,
+            "u_previousPointer",
           ),
-          1,
-        )
-      : 1;
-    const rippleFade = gridState.ripple ? (1 - progress) ** 2 : 0;
-    context.filter =
-      rippleFade > 0.01 ? `blur(${0.25 + rippleFade * 0.45}px)` : "none";
-    context.globalAlpha = 0.9 + rippleFade * 0.1;
+          time: gl.getUniformLocation(program, "u_time"),
+          strength: gl.getUniformLocation(program, "u_strength"),
+          motion: gl.getUniformLocation(program, "u_motion"),
+          dpr: gl.getUniformLocation(program, "u_dpr"),
+        };
+        const buffer = gl.createBuffer();
+        const state = {
+          width: 1,
+          height: 1,
+          frame: 0,
+          active: false,
+          strength: 0,
+          targetStrength: 0,
+          motion: 0,
+          targetX: 0,
+          targetY: 0,
+          x: 0,
+          y: 0,
+          previousX: 0,
+          previousY: 0,
+          targetSet: false,
+          lastFrameTime: performance.now(),
+        };
 
-    for (let x = 0; x <= gridState.width; x += minorSpacing) {
-      drawGridLine(true, x, x % majorSpacing === 0, time);
-    }
+        gl.useProgram(program);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 3, -1, -1, 3]),
+          gl.STATIC_DRAW,
+        );
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(
+          positionLocation,
+          2,
+          gl.FLOAT,
+          false,
+          0,
+          0,
+        );
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.clearColor(0, 0, 0, 0);
 
-    for (let y = 0; y <= gridState.height; y += minorSpacing) {
-      drawGridLine(false, y, y % majorSpacing === 0, time);
-    }
+        const render = (time) => {
+          const elapsed = Math.min(
+            Math.max((time - state.lastFrameTime) / 1000, 0),
+            0.05,
+          );
+          state.lastFrameTime = time;
+          const positionEase = 1 - Math.exp(-elapsed * 16);
+          const strengthEase = 1 - Math.exp(-elapsed * 9);
+          const nextX = state.x + (state.targetX - state.x) * positionEase;
+          const nextY = state.y + (state.targetY - state.y) * positionEase;
+          const velocity =
+            elapsed > 0
+              ? Math.hypot(nextX - state.x, nextY - state.y) /
+                elapsed /
+                1100
+              : 0;
 
-    context.filter = "none";
-    context.globalAlpha = 1;
-  };
+          state.previousX = state.x;
+          state.previousY = state.y;
+          state.x = nextX;
+          state.y = nextY;
+          state.motion +=
+            (Math.min(velocity, 1) - state.motion) * strengthEase;
+          state.strength +=
+            (state.targetStrength - state.strength) * strengthEase;
 
-  const animateGrid = (time) => {
-    if (!gridState.ripple) {
-      gridState.frame = 0;
-      drawGrid(time);
-      return;
-    }
+          gl.uniform2f(uniforms.resolution, state.width, state.height);
+          gl.uniform2f(uniforms.pointer, state.x, state.y);
+          gl.uniform2f(
+            uniforms.previousPointer,
+            state.previousX,
+            state.previousY,
+          );
+          gl.uniform1f(uniforms.time, time / 1000);
+          gl.uniform1f(uniforms.strength, state.strength);
+          gl.uniform1f(uniforms.motion, state.motion);
+          gl.uniform1f(
+            uniforms.dpr,
+            gridCanvas.width / state.width,
+          );
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    const elapsed = time - gridState.ripple.startTime;
-    if (elapsed >= rippleDuration) {
-      gridState.ripple = null;
-      hero.classList.remove("grid-is-active");
-      gridState.frame = 0;
-      drawGrid(time);
-      return;
-    }
+          const stillAnimating =
+            state.targetStrength > 0.01 || state.strength > 0.01;
+          if (stillAnimating) {
+            state.frame = window.requestAnimationFrame(render);
+          } else {
+            state.strength = 0;
+            state.frame = 0;
+            hero.classList.remove("grid-is-active");
+          }
+        };
 
-    drawGrid(time);
-    gridState.frame = window.requestAnimationFrame(animateGrid);
-  };
+        const startRendering = () => {
+          if (state.frame) return;
+          state.lastFrameTime = performance.now();
+          state.frame = window.requestAnimationFrame(render);
+        };
 
-  const startRipple = (x, y) => {
-    gridState.ripple = {
-      x,
-      y,
-      startTime: performance.now(),
-    };
-    hero.classList.add("grid-is-active");
+        const resizeGrid = () => {
+          const bounds = hero.getBoundingClientRect();
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          state.width = Math.max(1, Math.round(bounds.width));
+          state.height = Math.max(1, Math.round(bounds.height));
+          gridCanvas.width = Math.round(state.width * dpr);
+          gridCanvas.height = Math.round(state.height * dpr);
+          gl.viewport(0, 0, gridCanvas.width, gridCanvas.height);
+          render(performance.now());
+        };
 
-    if (!gridState.frame) {
-      gridState.frame = window.requestAnimationFrame(animateGrid);
-    }
-  };
+        resizeGrid();
+        new ResizeObserver(resizeGrid).observe(hero);
 
-  const resizeGrid = () => {
-    if (!context) return;
+        if (finePointer && !reducedMotion) {
+          hero.addEventListener("pointerenter", (event) => {
+            const bounds = hero.getBoundingClientRect();
+            const x = event.clientX - bounds.left;
+            const y = event.clientY - bounds.top;
 
-    const bounds = hero.getBoundingClientRect();
-    gridState.width = Math.max(1, Math.round(bounds.width));
-    gridState.height = Math.max(1, Math.round(bounds.height));
-    gridState.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    gridCanvas.width = Math.round(gridState.width * gridState.dpr);
-    gridCanvas.height = Math.round(gridState.height * gridState.dpr);
-    context.setTransform(
-      gridState.dpr,
-      0,
-      0,
-      gridState.dpr,
-      0,
-      0,
-    );
-    drawGrid(performance.now());
-  };
+            state.targetX = x;
+            state.targetY = y;
+            if (!state.targetSet) {
+              state.x = x;
+              state.y = y;
+              state.previousX = x;
+              state.previousY = y;
+              state.targetSet = true;
+            }
+            state.targetStrength = 1;
+            hero.classList.add("grid-is-active");
+            startRendering();
+          });
 
-  resizeGrid();
-  new ResizeObserver(resizeGrid).observe(hero);
-
-  if (finePointer && !reducedMotion) {
-    hero.addEventListener("pointerenter", (event) => {
-      const bounds = hero.getBoundingClientRect();
-      const x = event.clientX - bounds.left;
-      const y = event.clientY - bounds.top;
-
-      gridState.lastPointerX = x;
-      gridState.lastPointerY = y;
-      startRipple(x, y);
-    });
-
-    hero.addEventListener("pointermove", (event) => {
-      const bounds = hero.getBoundingClientRect();
-      const x = event.clientX - bounds.left;
-      const y = event.clientY - bounds.top;
-      const moved = gridState.lastPointerX === null
-        ? Infinity
-        : Math.hypot(
-            x - gridState.lastPointerX,
-            y - gridState.lastPointerY,
+          hero.addEventListener(
+            "pointermove",
+            (event) => {
+              const bounds = hero.getBoundingClientRect();
+              state.targetX = event.clientX - bounds.left;
+              state.targetY = event.clientY - bounds.top;
+              state.targetStrength = 1;
+              startRendering();
+            },
+            { passive: true },
           );
 
-      gridState.lastPointerX = x;
-      gridState.lastPointerY = y;
-      if (!gridState.ripple && moved > 8) startRipple(x, y);
-    });
-
-    hero.addEventListener("pointerleave", () => {
-      gridState.lastPointerX = null;
-      gridState.lastPointerY = null;
-    });
+          hero.addEventListener("pointerleave", () => {
+            state.targetStrength = 0;
+            state.targetSet = false;
+            startRendering();
+          });
+        }
+      }
+    }
   }
 }
 
