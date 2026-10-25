@@ -91,6 +91,86 @@ anchorLinks.forEach((link) => {
 window.addEventListener("wheel", cancelAnchorAnimation, { passive: true });
 window.addEventListener("touchstart", cancelAnchorAnimation, { passive: true });
 
+const hero = document.querySelector(".hero");
+const gridWarpLayer = document.querySelector(".grid-warp-layer");
+const gridDisplacement = document.querySelector("#grid-displacement");
+const finePointer = window.matchMedia("(pointer: fine)").matches;
+
+if (hero && gridWarpLayer && gridDisplacement && finePointer && !reducedMotion) {
+  let currentScale = 0;
+  let targetScale = 0;
+  let gridFrame = 0;
+  let previousX = 0;
+  let previousY = 0;
+  let previousPointerTime = 0;
+  let previousFrameTime = 0;
+
+  const animateGrid = (time) => {
+    const delta = Math.min((time - previousFrameTime) / 16.67, 2);
+    previousFrameTime = time;
+
+    currentScale += (targetScale - currentScale) * 0.12 * delta;
+    gridDisplacement.setAttribute("scale", currentScale.toFixed(2));
+
+    if (Math.abs(targetScale - currentScale) < 0.08) {
+      currentScale = targetScale;
+      gridDisplacement.setAttribute("scale", currentScale.toFixed(2));
+
+      if (targetScale === 0) {
+        hero.classList.remove("grid-is-active");
+      }
+
+      gridFrame = 0;
+      return;
+    }
+
+    gridFrame = window.requestAnimationFrame(animateGrid);
+  };
+
+  const startGridAnimation = () => {
+    if (gridFrame) return;
+    previousFrameTime = performance.now();
+    gridFrame = window.requestAnimationFrame(animateGrid);
+  };
+
+  hero.addEventListener("pointerenter", (event) => {
+    const bounds = hero.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    hero.classList.add("grid-is-active");
+    gridWarpLayer.style.setProperty("--grid-x", `${x.toFixed(1)}px`);
+    gridWarpLayer.style.setProperty("--grid-y", `${y.toFixed(1)}px`);
+    previousX = x;
+    previousY = y;
+    previousPointerTime = performance.now();
+    targetScale = 18;
+    startGridAnimation();
+  });
+
+  hero.addEventListener("pointermove", (event) => {
+    const bounds = hero.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    const time = performance.now();
+    const elapsed = Math.max(time - previousPointerTime, 8);
+    const speed =
+      Math.hypot(x - previousX, y - previousY) / elapsed;
+
+    gridWarpLayer.style.setProperty("--grid-x", `${x.toFixed(1)}px`);
+    gridWarpLayer.style.setProperty("--grid-y", `${y.toFixed(1)}px`);
+    targetScale = Math.min(44, 18 + speed * 14);
+    previousX = x;
+    previousY = y;
+    previousPointerTime = time;
+    startGridAnimation();
+  });
+
+  hero.addEventListener("pointerleave", () => {
+    targetScale = 0;
+    startGridAnimation();
+  });
+}
+
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {
     element.classList.add("is-visible");

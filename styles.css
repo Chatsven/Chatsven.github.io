@@ -129,7 +129,12 @@ button {
   display: inline-flex;
   align-items: center;
   justify-self: start;
-  gap: 0.7rem;
+}
+
+.nav-logo {
+  display: block;
+  width: 1.6875rem;
+  height: 0.5625rem;
 }
 
 .brand-mark {
@@ -142,17 +147,6 @@ button {
   font-family: var(--display);
   font-size: 1rem;
   line-height: 1;
-}
-
-.brand-name {
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
-.brand-dot {
-  color: var(--accent);
 }
 
 .nav {
@@ -331,6 +325,45 @@ button {
   transform: translate(-50%, -50%) rotate(-1deg);
 }
 
+.grid-warp-layer {
+  --grid-x: 50%;
+  --grid-y: 50%;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  mask-image: radial-gradient(
+    circle 9.5rem at var(--grid-x) var(--grid-y),
+    black 0,
+    rgba(0, 0, 0, 0.8) 34%,
+    transparent 74%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle 9.5rem at var(--grid-x) var(--grid-y),
+    black 0,
+    rgba(0, 0, 0, 0.8) 34%,
+    transparent 74%
+  );
+  pointer-events: none;
+}
+
+.grid-warp-layer img {
+  opacity: 0.92;
+  filter: url("#grid-warp-filter");
+  will-change: filter;
+}
+
+.hero.grid-is-active .grid-warp-layer {
+  opacity: 1;
+}
+
+.svg-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .hero::after {
   position: absolute;
   z-index: -1;
@@ -345,39 +378,6 @@ button {
   );
   content: "";
   pointer-events: none;
-}
-
-.hero-topline {
-  position: absolute;
-  z-index: 3;
-  top: clamp(1.5rem, 4vw, 2.8rem);
-  right: clamp(1.25rem, 5.5vw, 6rem);
-  left: clamp(1.25rem, 5.5vw, 6rem);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #315563;
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-}
-
-.hero-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.hero-brand .brand-mark {
-  width: 2.3rem;
-  height: 2.3rem;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-}
-
-.hero-location {
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(6, 31, 44, 0.25);
 }
 
 .hero-grid {
@@ -1300,16 +1300,6 @@ h1 {
 
   .hero {
     padding: 7.5rem 1.25rem 1.25rem;
-  }
-
-  .hero-topline {
-    right: 1.25rem;
-    left: 1.25rem;
-  }
-
-  .hero-location {
-    font-size: 0.52rem;
-    letter-spacing: 0.06em;
   }
 
   .hero-grid {

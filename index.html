@@ -27,7 +27,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=8" />
     <noscript>
       <style>
         .reveal {
@@ -40,12 +40,45 @@
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
+    <svg class="svg-filters" aria-hidden="true" width="0" height="0">
+      <defs>
+        <filter
+          id="grid-warp-filter"
+          x="-12%"
+          y="-12%"
+          width="124%"
+          height="124%"
+          color-interpolation-filters="sRGB"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.012 0.022"
+            numOctaves="2"
+            seed="7"
+            result="noise"
+          />
+          <feDisplacementMap
+            id="grid-displacement"
+            in="SourceGraphic"
+            in2="noise"
+            scale="0"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+    </svg>
 
     <header class="site-header" data-site-header>
       <div class="header-shell">
         <a class="brand" href="#top" aria-label="澪空，返回首页">
-          <span class="brand-mark" aria-hidden="true">澪</span>
-          <span class="brand-name">MIO<span class="brand-dot">.</span></span>
+          <img
+            class="nav-logo"
+            src="assets/mio-logo.svg"
+            alt=""
+            width="27"
+            height="9"
+          />
         </a>
         <nav class="nav" id="site-nav" aria-label="主导航">
           <a href="#about" data-nav-section="about">关于</a>
@@ -86,14 +119,10 @@
     <main id="main">
       <section class="hero" id="top">
         <div class="hero-backdrop" aria-hidden="true">
-          <img src="assets/hero-grid.svg" alt="" />
-        </div>
-        <div class="hero-topline">
-          <a class="hero-brand" href="#top" aria-label="澪空，返回首页">
-            <span class="brand-mark" aria-hidden="true">澪</span>
-            <span>澪空 / MIO</span>
-          </a>
-          <span class="hero-location">HONG KONG · UTC+8</span>
+          <img class="grid-base" src="assets/hero-grid.svg" alt="" />
+          <div class="grid-warp-layer">
+            <img src="assets/hero-grid.svg" alt="" />
+          </div>
         </div>
 
         <div class="hero-grid">
@@ -342,6 +371,6 @@
       <a href="#top">回到顶部 <span aria-hidden="true">↑</span></a>
     </footer>
 
-    <script src="script.js?v=6"></script>
+    <script src="script.js?v=8"></script>
   </body>
 </html>
