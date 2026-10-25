@@ -28,6 +28,10 @@ html {
   scroll-behavior: smooth;
 }
 
+html.lenis {
+  scroll-behavior: auto;
+}
+
 body {
   margin: 0;
   overflow-x: clip;

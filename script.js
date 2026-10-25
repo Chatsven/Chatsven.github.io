@@ -15,6 +15,22 @@ const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
+if (!reducedMotion && "Lenis" in window) {
+  const lenis = new Lenis({
+    autoRaf: true,
+    lerp: 0.075,
+    smoothWheel: true,
+    wheelMultiplier: 1.05,
+    anchors: {
+      offset: -88,
+    },
+    stopInertiaOnNavigate: true,
+    respectReducedMotion: true,
+  });
+
+  window.siteScroll = lenis;
+}
+
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {
     element.classList.add("is-visible");

@@ -15,6 +15,9 @@ python3 -m http.server 8000
 - 个人简介、作品和联系方式：`index.html`
 - 颜色、字体与版式：`styles.css`
 - 头像与项目预览图：`assets/`
+- 阻尼滚动：`script.js`，使用本机打包的 Lenis 1.3.27（MIT）
+
+系统启用“减少动态效果”时，阻尼滚动会自动停用。
 
 ## 部署到 GitHub Pages
 
