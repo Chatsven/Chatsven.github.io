@@ -202,9 +202,9 @@ const draw = () => {
 
     context.beginPath();
     context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    context.fillStyle = isActive ? "#001e31" : "#59d5ea";
+    context.fillStyle = "#59d5ea";
     context.fill();
-    context.strokeStyle = isActive ? "#59d5ea" : "#165164";
+    context.strokeStyle = "#165164";
     context.lineWidth = isActive ? 2.4 : 1;
     context.stroke();
   });

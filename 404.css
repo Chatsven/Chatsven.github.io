@@ -52,7 +52,7 @@ img {
   left: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 2rem clamp(1.25rem, 5vw, 5rem);
 }
 
@@ -65,17 +65,6 @@ img {
   display: block;
   width: 3.375rem;
   height: 1.125rem;
-}
-
-.not-found-header-link {
-  color: #445c66;
-  font-size: 0.86rem;
-  transition: color 180ms ease;
-}
-
-.not-found-header-link:hover,
-.not-found-header-link:focus-visible {
-  color: var(--ink);
 }
 
 .not-found-main {
@@ -132,13 +121,6 @@ img {
   touch-action: none;
 }
 
-.not-found-hint {
-  margin: 0.2rem 0 0;
-  color: #81939a;
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-}
-
 .not-found-button {
   display: inline-flex;
   align-items: center;
@@ -187,9 +169,6 @@ img {
     margin-left: -0.75rem;
   }
 
-  .not-found-hint {
-    font-size: 0.66rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -972,19 +972,19 @@ h1 {
 }
 
 .footer-inner {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-rows: 1fr auto;
   width: min(100%, 87.669rem);
   min-height: 41.965rem;
   margin: 0 auto;
-  padding: 13.281rem 4.496rem 2.475rem;
+  padding: 0 4.496rem 2.475rem;
 }
 
 .footer-brand {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
+  align-self: center;
   gap: 1.89rem;
 }
 
@@ -1150,7 +1150,7 @@ h1 {
 @media (max-width: 900px) {
   .footer-inner {
     min-height: 34rem;
-    padding: clamp(6rem, 18vw, 10rem) var(--page-padding) 2rem;
+    padding: 0 var(--page-padding) 2rem;
   }
 
   .hero-grid {
@@ -1353,7 +1353,7 @@ h1 {
 
   .footer-inner {
     min-height: 29rem;
-    padding: 4.5rem 1.25rem 2rem;
+    padding: 0 1.25rem 2rem;
   }
 
   .footer-brand {
