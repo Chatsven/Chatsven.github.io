@@ -16,13 +16,14 @@ python3 -m http.server 8000
 - 颜色、字体与版式：`styles.css`
 - 头像与项目预览图：`assets/`
 - 锚点阻尼滚动：`script.js` 中的原生临界阻尼动画
+- 首页 Canvas 网格与鼠标局部扭曲：`script.js`
 
 一般滚轮与触控保持原生滚动，只对站内锚点跳转启用阻尼缓动。系统启用“减少动态效果”时，锚点阻尼会自动停用。
 
 ## 部署到 GitHub Pages
 
-仓库名称使用 `<用户名>.github.io` 时，站点地址为
-`https://<用户名>.github.io/`。
+仓库沿用 `<用户名>.github.io` 命名，当前通过 `CNAME` 发布到
+<https://mio.cool/>。
 
 ```bash
 git init
