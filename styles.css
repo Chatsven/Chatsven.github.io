@@ -90,35 +90,31 @@ button {
 .site-header {
   position: fixed;
   z-index: 80;
-  top: 0.5rem;
-  left: 50%;
-  width: min(calc(100% - 2rem), 61.25rem);
+  top: 0;
+  left: 0;
+  width: 100%;
   margin: 0;
-  padding: 0;
-  transform: translateX(-50%);
+  padding: 0 var(--page-padding);
   transition:
-    opacity 280ms ease,
-    transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    background-color 260ms ease,
+    border-color 260ms ease,
+    backdrop-filter 260ms ease;
 }
 
-.site-header.is-scrolled .header-shell {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(0, 0, 0, 0.13);
+.site-header.is-scrolled {
+  background: rgba(244, 250, 251, 0.82);
+  border-bottom: 1px solid rgba(6, 31, 44, 0.08);
+  backdrop-filter: blur(18px) saturate(1.18);
 }
 
 .header-shell {
   display: flex;
   align-items: center;
-  min-height: 2.875rem;
-  padding: 0.25rem 0.375rem 0.25rem 1rem;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0.75rem;
-  box-shadow: none;
-  backdrop-filter: blur(12px);
-  transition:
-    background-color 220ms ease,
-    border-color 220ms ease;
+  width: 100%;
+  max-width: 95rem;
+  min-height: 4.75rem;
+  margin: 0 auto;
+  padding: 0;
 }
 
 .brand {
@@ -159,17 +155,13 @@ button {
   align-items: center;
   min-height: 2.25rem;
   padding: 0 0.75rem;
-  border-radius: 0.75rem;
   color: #445c66;
-  transition:
-    color 180ms ease,
-    background 180ms ease;
+  transition: color 180ms ease;
 }
 
 .nav a:hover,
 .nav a:focus-visible {
   color: var(--ink);
-  background: rgba(6, 31, 44, 0.045);
 }
 
 .nav a.is-active {
@@ -213,19 +205,15 @@ button {
   padding: 0 0.75rem;
   color: #233f4a;
   background: transparent;
-  border-radius: 0.75rem;
   font-family: var(--sans);
   font-size: 0.82rem;
   letter-spacing: 0;
   text-transform: none;
-  transition:
-    color 180ms ease,
-    background 180ms ease;
+  transition: color 180ms ease;
 }
 
 .header-link:hover {
   color: var(--ink);
-  background: rgba(6, 31, 44, 0.045);
 }
 
 .header-link::after {
@@ -523,8 +511,8 @@ h1 {
   );
   border-radius: 50%;
   content: "";
-  filter: blur(22px);
-  animation: aura-pulse 6s ease-in-out infinite;
+  filter: blur(24px);
+  animation: aura-pulse 4.8s ease-in-out infinite;
 }
 
 .portrait-frame {
@@ -536,7 +524,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 50%;
   box-shadow: 1.15rem 1.15rem 0 var(--cyan);
-  animation: portrait-float 7s ease-in-out infinite;
+  animation: portrait-float 5.4s ease-in-out infinite;
 }
 
 .portrait {
@@ -557,7 +545,7 @@ h1 {
 
 .orbit-one {
   inset: 6%;
-  animation: orbit-breathe 8s ease-in-out infinite;
+  animation: orbit-breathe 5.2s ease-in-out infinite;
 }
 
 .orbit-one::before {
@@ -569,14 +557,16 @@ h1 {
   background: var(--deep-cyan);
   border: 0.16rem solid rgba(224, 247, 252, 0.82);
   border-radius: 50%;
-  box-shadow: 0 0 1rem rgba(12, 107, 134, 0.45);
+  box-shadow:
+    0 0 1rem rgba(12, 107, 134, 0.58),
+    0 0 2rem rgba(86, 197, 223, 0.4);
   content: "";
 }
 
 .orbit-two {
   inset: 18%;
   border-style: dashed;
-  animation: rotate 44s linear infinite reverse;
+  animation: rotate 18s linear infinite reverse;
 }
 
 @keyframes rotate {
@@ -588,34 +578,34 @@ h1 {
 @keyframes portrait-float {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(-1.2deg) scale(1);
   }
   50% {
-    transform: translateY(-0.6rem);
+    transform: translateY(-1rem) rotate(1.2deg) scale(1.035);
   }
 }
 
 @keyframes orbit-breathe {
   0%,
   100% {
-    opacity: 0.66;
-    transform: scale(0.99);
+    opacity: 0.58;
+    transform: scale(0.965);
   }
   50% {
     opacity: 1;
-    transform: scale(1.025);
+    transform: scale(1.065);
   }
 }
 
 @keyframes aura-pulse {
   0%,
   100% {
-    opacity: 0.55;
-    transform: rotate(0) scale(0.96);
+    opacity: 0.5;
+    transform: rotate(-8deg) scale(0.92);
   }
   50% {
-    opacity: 0.92;
-    transform: rotate(12deg) scale(1.06);
+    opacity: 0.98;
+    transform: rotate(16deg) scale(1.12);
   }
 }
 
@@ -634,14 +624,14 @@ h1 {
   top: 14%;
   right: 0;
   transform: rotate(5deg);
-  animation: note-float-top 5.5s ease-in-out infinite;
+  animation: note-float-top 4.4s ease-in-out infinite;
 }
 
 .orbit-note-bottom {
   bottom: 13%;
   left: 0;
   transform: rotate(-5deg);
-  animation: note-float-bottom 6s ease-in-out infinite;
+  animation: note-float-bottom 4.8s ease-in-out infinite;
 }
 
 @keyframes note-float-top {
@@ -650,7 +640,7 @@ h1 {
     transform: translateY(0) rotate(5deg);
   }
   50% {
-    transform: translateY(-0.35rem) rotate(3deg);
+    transform: translateY(-0.7rem) rotate(2deg);
   }
 }
 
@@ -660,7 +650,7 @@ h1 {
     transform: translateY(0) rotate(-5deg);
   }
   50% {
-    transform: translateY(0.35rem) rotate(-3deg);
+    transform: translateY(0.7rem) rotate(-2deg);
   }
 }
 
@@ -707,7 +697,6 @@ h1 {
   margin-top: clamp(1.5rem, 3vw, 3rem);
   color: var(--paper-bright);
   background: var(--ink);
-  transform: rotate(-1.3deg) scale(1.02);
 }
 
 .ticker-track {
@@ -1267,15 +1256,13 @@ h1 {
 
 @media (max-width: 640px) {
   .site-header {
-    top: 0.5rem;
-    width: calc(100% - 1.25rem);
+    padding: 0 0.75rem;
   }
 
   .header-shell {
     position: relative;
-    min-height: 2.875rem;
-    padding: 0.25rem 0.25rem 0.25rem 0.8rem;
-    border-radius: 0.75rem;
+    min-height: 3.75rem;
+    padding: 0;
   }
 
   .header-shell .brand-name {

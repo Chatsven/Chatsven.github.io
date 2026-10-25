@@ -147,63 +147,74 @@ if (hero && gridCanvas) {
     width: 0,
     height: 0,
     dpr: 1,
-    pointerX: 0,
-    pointerY: 0,
-    strength: 0,
-    targetStrength: 0,
+    ripple: null,
     frame: 0,
-    previousFrameTime: 0,
-    previousX: 0,
-    previousY: 0,
-    previousPointerTime: 0,
+    lastPointerX: null,
+    lastPointerY: null,
   };
 
+  const rippleDuration = 1000;
   const minorSpacing = 48;
   const majorSpacing = 192;
 
-  const getWarpedPoint = (x, y) => {
-    if (gridState.strength < 0.001) return { x, y };
+  const getWarpedPoint = (x, y, time) => {
+    const ripple = gridState.ripple;
+    if (!ripple) return { x, y };
 
-    const deltaX = x - gridState.pointerX;
-    const deltaY = y - gridState.pointerY;
-    const distance = Math.hypot(deltaX, deltaY);
-    const radius = Math.min(
-      250,
-      Math.max(165, Math.min(gridState.width, gridState.height) * 0.25),
+    const progress = Math.min(
+      Math.max((time - ripple.startTime) / rippleDuration, 0),
+      1,
     );
+    const deltaX = x - ripple.x;
+    const deltaY = y - ripple.y;
+    const distance = Math.hypot(deltaX, deltaY);
+    const easedProgress = 1 - (1 - progress) ** 3;
+    const front = 20 + easedProgress * Math.min(
+      360,
+      Math.max(gridState.width, gridState.height) * 0.34,
+    );
+    const band = 38 + progress * 52;
+    const signedDistance = distance - front;
+    const ring =
+      Math.exp(
+        -(signedDistance * signedDistance) /
+          (2 * band * band),
+      );
+    const fade = (1 - progress) ** 2;
 
-    if (distance > radius) return { x, y };
-    if (distance < 0.01) {
-      return { x: gridState.pointerX, y: gridState.pointerY };
-    }
+    if (ring < 0.002 || fade < 0.002) return { x, y };
 
-    const normalizedDistance = distance / radius;
-    const smoothFalloff =
-      (1 - normalizedDistance) ** 2 *
-      (3 - 2 * (1 - normalizedDistance));
-    const falloff = smoothFalloff * gridState.strength;
-    const angle =
-      Math.atan2(deltaY, deltaX) + falloff * 0.68;
-    const bend =
-      Math.sin(normalizedDistance * Math.PI) * falloff * 30;
-    const warpedDistance = distance + bend;
+    const angle = Math.atan2(deltaY, deltaX);
+    const amplitude = 28 * fade * ring;
+    const radialWave =
+      Math.sin((signedDistance / band) * Math.PI) * amplitude;
+    const tangentialWave =
+      Math.cos((signedDistance / band) * Math.PI) * amplitude * 0.24;
 
     return {
-      x: gridState.pointerX + Math.cos(angle) * warpedDistance,
-      y: gridState.pointerY + Math.sin(angle) * warpedDistance,
+      x:
+        x +
+        Math.cos(angle) * radialWave -
+        Math.sin(angle) * tangentialWave,
+      y:
+        y +
+        Math.sin(angle) * radialWave +
+        Math.cos(angle) * tangentialWave,
     };
   };
 
-  const drawGridLine = (isVertical, position, isMajor) => {
-    const lineLength = isVertical ? gridState.height : gridState.width;
-    const sample = isMajor ? 8 : 12;
+  const drawGridLine = (isVertical, position, isMajor, time) => {
+    const lineLength = isVertical
+      ? gridState.height
+      : gridState.width;
+    const sample = isMajor ? 6 : 9;
 
     context.beginPath();
 
     for (let point = 0; point <= lineLength + sample; point += sample) {
       const x = isVertical ? position : point;
       const y = isVertical ? point : position;
-      const warped = getWarpedPoint(x, y);
+      const warped = getWarpedPoint(x, y, time);
 
       if (point === 0) context.moveTo(warped.x, warped.y);
       else context.lineTo(warped.x, warped.y);
@@ -216,53 +227,68 @@ if (hero && gridCanvas) {
     context.stroke();
   };
 
-  const drawGrid = () => {
+  const drawGrid = (time = performance.now()) => {
     if (!context || !gridState.width || !gridState.height) return;
 
     context.clearRect(0, 0, gridState.width, gridState.height);
 
+    const progress = gridState.ripple
+      ? Math.min(
+          Math.max(
+            (time - gridState.ripple.startTime) / rippleDuration,
+            0,
+          ),
+          1,
+        )
+      : 1;
+    const rippleFade = gridState.ripple ? (1 - progress) ** 2 : 0;
+    context.filter =
+      rippleFade > 0.01 ? `blur(${0.25 + rippleFade * 0.45}px)` : "none";
+    context.globalAlpha = 0.9 + rippleFade * 0.1;
+
     for (let x = 0; x <= gridState.width; x += minorSpacing) {
-      drawGridLine(true, x, x % majorSpacing === 0);
+      drawGridLine(true, x, x % majorSpacing === 0, time);
     }
 
     for (let y = 0; y <= gridState.height; y += minorSpacing) {
-      drawGridLine(false, y, y % majorSpacing === 0);
+      drawGridLine(false, y, y % majorSpacing === 0, time);
     }
+
+    context.filter = "none";
+    context.globalAlpha = 1;
   };
 
   const animateGrid = (time) => {
-    const elapsed = Math.min(
-      Math.max((time - gridState.previousFrameTime) / 1000, 0),
-      0.05,
-    );
-    gridState.previousFrameTime = time;
-    const easing = 1 - Math.exp(-elapsed * 13);
-
-    gridState.strength +=
-      (gridState.targetStrength - gridState.strength) * easing;
-    drawGrid();
-
-    const isSettled =
-      Math.abs(gridState.targetStrength - gridState.strength) < 0.004;
-
-    if (isSettled) {
-      gridState.strength = gridState.targetStrength;
-      drawGrid();
-      hero.classList.toggle(
-        "grid-is-active",
-        gridState.targetStrength > 0.01,
-      );
+    if (!gridState.ripple) {
       gridState.frame = 0;
+      drawGrid(time);
       return;
     }
 
+    const elapsed = time - gridState.ripple.startTime;
+    if (elapsed >= rippleDuration) {
+      gridState.ripple = null;
+      hero.classList.remove("grid-is-active");
+      gridState.frame = 0;
+      drawGrid(time);
+      return;
+    }
+
+    drawGrid(time);
     gridState.frame = window.requestAnimationFrame(animateGrid);
   };
 
-  const startGridAnimation = () => {
-    if (gridState.frame) return;
-    gridState.previousFrameTime = performance.now();
-    gridState.frame = window.requestAnimationFrame(animateGrid);
+  const startRipple = (x, y) => {
+    gridState.ripple = {
+      x,
+      y,
+      startTime: performance.now(),
+    };
+    hero.classList.add("grid-is-active");
+
+    if (!gridState.frame) {
+      gridState.frame = window.requestAnimationFrame(animateGrid);
+    }
   };
 
   const resizeGrid = () => {
@@ -282,7 +308,7 @@ if (hero && gridCanvas) {
       0,
       0,
     );
-    drawGrid();
+    drawGrid(performance.now());
   };
 
   resizeGrid();
@@ -294,38 +320,30 @@ if (hero && gridCanvas) {
       const x = event.clientX - bounds.left;
       const y = event.clientY - bounds.top;
 
-      gridState.pointerX = x;
-      gridState.pointerY = y;
-      gridState.previousX = x;
-      gridState.previousY = y;
-      gridState.previousPointerTime = performance.now();
-      gridState.targetStrength = 0.36;
-      hero.classList.add("grid-is-active");
-      startGridAnimation();
+      gridState.lastPointerX = x;
+      gridState.lastPointerY = y;
+      startRipple(x, y);
     });
 
     hero.addEventListener("pointermove", (event) => {
       const bounds = hero.getBoundingClientRect();
       const x = event.clientX - bounds.left;
       const y = event.clientY - bounds.top;
-      const time = performance.now();
-      const elapsed = Math.max(time - gridState.previousPointerTime, 8);
-      const speed =
-        Math.hypot(x - gridState.previousX, y - gridState.previousY) /
-        elapsed;
+      const moved = gridState.lastPointerX === null
+        ? Infinity
+        : Math.hypot(
+            x - gridState.lastPointerX,
+            y - gridState.lastPointerY,
+          );
 
-      gridState.pointerX = x;
-      gridState.pointerY = y;
-      gridState.previousX = x;
-      gridState.previousY = y;
-      gridState.previousPointerTime = time;
-      gridState.targetStrength = Math.min(1, 0.52 + speed * 0.8);
-      startGridAnimation();
+      gridState.lastPointerX = x;
+      gridState.lastPointerY = y;
+      if (!gridState.ripple && moved > 8) startRipple(x, y);
     });
 
     hero.addEventListener("pointerleave", () => {
-      gridState.targetStrength = 0;
-      startGridAnimation();
+      gridState.lastPointerX = null;
+      gridState.lastPointerY = null;
     });
   }
 }
