@@ -19,6 +19,9 @@ const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
 
+const resolveAnchorElement = (target) =>
+  target.querySelector(".section-heading, .contact-top") ?? target;
+
 const cancelAnchorAnimation = () => {
   if (!anchorAnimationFrame) return;
   window.cancelAnimationFrame(anchorAnimationFrame);
@@ -28,9 +31,17 @@ const cancelAnchorAnimation = () => {
 const dampedScrollTo = (target) => {
   cancelAnchorAnimation();
 
+  const anchor = resolveAnchorElement(target);
+  const transformValue = window.getComputedStyle(anchor).transform;
+  const transformOffset =
+    transformValue === "none"
+      ? 0
+      : new DOMMatrixReadOnly(transformValue).m42;
+  const layoutTop =
+    anchor.getBoundingClientRect().top + window.scrollY - transformOffset;
   const targetY = Math.max(
     0,
-    target.getBoundingClientRect().top + window.scrollY - anchorOffset,
+    layoutTop - anchorOffset,
   );
 
   if (reducedMotion) {
@@ -90,6 +101,14 @@ anchorLinks.forEach((link) => {
 
 window.addEventListener("wheel", cancelAnchorAnimation, { passive: true });
 window.addEventListener("touchstart", cancelAnchorAnimation, { passive: true });
+
+const initialAnchor = location.hash.length > 1
+  ? document.querySelector(location.hash)
+  : null;
+
+if (initialAnchor) {
+  window.requestAnimationFrame(() => dampedScrollTo(initialAnchor));
+}
 
 const hero = document.querySelector(".hero");
 const gridWarpLayer = document.querySelector(".grid-warp-layer");
