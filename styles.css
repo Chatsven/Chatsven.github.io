@@ -1043,6 +1043,18 @@ h1 {
   margin: 0;
 }
 
+.footer-meta p a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.footer-meta p a:hover,
+.footer-meta p a:focus-visible {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+}
+
 .footer-icp {
   flex: none;
   text-align: right;
@@ -1110,7 +1122,15 @@ h1 {
   }
 
   .footer {
-    scroll-snap-align: end;
+    height: 100svh;
+    min-height: 100svh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .footer-inner {
+    height: 100%;
+    min-height: 100%;
   }
 }
 

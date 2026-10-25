@@ -115,6 +115,12 @@ const dampedScrollToY = (requestedTargetY) => {
 
 const dampedScrollTo = (target) => {
   const anchor = resolveAnchorElement(target);
+
+  if (anchor.matches(".footer")) {
+    dampedScrollToY(getLayoutTop(anchor));
+    return;
+  }
+
   const targetY = anchor.classList.contains("hero")
     ? 0
     : getLayoutTop(anchor) - anchorOffset;
