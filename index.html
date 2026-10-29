@@ -27,7 +27,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=22" />
+    <link rel="stylesheet" href="styles.css?v=23" />
     <noscript>
       <style>
         .reveal {
@@ -88,24 +88,33 @@
     </header>
 
     <main id="main">
-      <section class="hero" id="top">
+      <section class="hero-story" id="top" data-hero-story>
+        <div class="hero" data-hero>
+          <div class="hero-color-field" aria-hidden="true"></div>
         <div class="hero-backdrop" aria-hidden="true">
           <canvas class="hero-grid-canvas"></canvas>
         </div>
 
         <div class="hero-grid">
           <div class="hero-copy">
-            <h1 class="hero-title reveal">
-              <img
-                src="assets/hero-title.svg"
-                alt="Synthesizing aesthetics, functionality and human interaction."
-                width="809"
-                height="116"
-              />
+            <h1 class="hero-title">
+              <button
+                class="hero-title-trigger"
+                type="button"
+                data-variable-title
+                aria-label="切换可变字体与控制节点效果"
+                aria-pressed="false"
+              >
+                <span class="hero-line">Synthesizing</span>
+                <span class="hero-line"><em>aesthetics,</em></span>
+                <span class="hero-line">functionality <i>and</i></span>
+                <span class="hero-line"><em>human interaction.</em></span>
+                <canvas class="hero-title-nodes" aria-hidden="true"></canvas>
+              </button>
             </h1>
           </div>
 
-          <div class="hero-art reveal" aria-label="澪空的头像">
+          <div class="hero-art" aria-label="澪空的头像">
             <div class="orbit orbit-one" aria-hidden="true"></div>
             <div class="orbit orbit-two" aria-hidden="true"></div>
             <div class="portrait-frame">
@@ -122,7 +131,7 @@
           </div>
         </div>
 
-        <div class="hero-links reveal" aria-label="我的链接">
+        <div class="hero-links" aria-label="我的链接">
           <a
             class="hero-icon-link"
             href="https://github.com/Chatsven"
@@ -188,6 +197,16 @@
             />
           </a>
         </div>
+
+          <div class="hero-progress" aria-hidden="true">
+            <span class="hero-progress-label">SCROLL</span>
+            <i></i><i></i><i></i>
+          </div>
+        </div>
+
+        <span class="hero-snap hero-snap-one" aria-hidden="true"></span>
+        <span class="hero-snap hero-snap-two" aria-hidden="true"></span>
+        <span class="hero-snap hero-snap-three" aria-hidden="true"></span>
       </section>
 
       <div class="ticker" aria-hidden="true">
@@ -351,6 +370,6 @@
       </div>
     </footer>
 
-    <script src="script.js?v=26"></script>
+    <script src="script.js?v=27"></script>
   </body>
 </html>

@@ -496,6 +496,195 @@ if (hero && gridCanvas) {
   }
 }
 
+const heroStory = document.querySelector("[data-hero-story]");
+const heroTitle = document.querySelector(".hero-title");
+const heroTitleTrigger = document.querySelector("[data-variable-title]");
+const heroTitleNodes = document.querySelector(".hero-title-nodes");
+const heroProgressLabel = document.querySelector(".hero-progress-label");
+const phaseLabels = ["SCROLL", "MORPH", "IDENTITY"];
+
+const updateHeroStory = () => {
+  if (!hero || !heroStory) return;
+
+  const storyTop = heroStory.offsetTop;
+  const scrollRange = Math.max(
+    1,
+    heroStory.offsetHeight - window.innerHeight,
+  );
+  const progress = Math.min(
+    1,
+    Math.max(0, (window.scrollY - storyTop) / scrollRange),
+  );
+  const phase = progress < 0.28 ? 0 : progress < 0.72 ? 1 : 2;
+
+  hero.dataset.phase = String(phase);
+  hero.style.setProperty("--hero-progress", progress.toFixed(4));
+  hero.style.setProperty("--hero-base-hue", (194 + progress * 112).toFixed(1));
+  hero.style.setProperty("--title-opsz", (118 + progress * 26).toFixed(1));
+  hero.style.setProperty("--title-weight", (480 + progress * 340).toFixed(1));
+  hero.style.setProperty("--title-soft", (30 + progress * 58).toFixed(1));
+  hero.style.setProperty("--title-wonk", phase === 1 ? "1" : "0");
+
+  if (heroProgressLabel) {
+    heroProgressLabel.textContent = phaseLabels[phase];
+  }
+};
+
+if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
+  let titleEffectFrame = 0;
+  let titleEffectStart = 0;
+  let titleEffectTimeout = 0;
+  let lastPointerX = null;
+  let lastPointerY = null;
+  let lastPointerTime = 0;
+
+  const drawTitleNodes = (time) => {
+    const canvasBounds = heroTitleNodes.getBoundingClientRect();
+    const titleBounds = heroTitleTrigger.getBoundingClientRect();
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(canvasBounds.width));
+    const height = Math.max(1, Math.round(canvasBounds.height));
+
+    if (
+      heroTitleNodes.width !== Math.round(width * ratio) ||
+      heroTitleNodes.height !== Math.round(height * ratio)
+    ) {
+      heroTitleNodes.width = Math.round(width * ratio);
+      heroTitleNodes.height = Math.round(height * ratio);
+    }
+
+    const context = heroTitleNodes.getContext("2d");
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    const elapsed = (time - titleEffectStart) / 1350;
+    const visibility = Math.sin(Math.min(elapsed, 1) * Math.PI);
+    const offsetX = canvasBounds.left - titleBounds.left;
+    const offsetY = canvasBounds.top - titleBounds.top;
+    const lineRects = [...heroTitle.querySelectorAll(".hero-line")].map(
+      (line) => {
+        const bounds = line.getBoundingClientRect();
+        return {
+          left: bounds.left - titleBounds.left + offsetX,
+          top: bounds.top - titleBounds.top + offsetY,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      },
+    );
+
+    context.lineWidth = 0.8;
+    context.strokeStyle = `rgba(89, 213, 234, ${0.35 * visibility})`;
+    context.fillStyle = `rgba(89, 213, 234, ${0.95 * visibility})`;
+
+    lineRects.forEach((bounds, lineIndex) => {
+      const points = [
+        { x: bounds.left, y: bounds.top },
+        { x: bounds.left + bounds.width * 0.5, y: bounds.top },
+        { x: bounds.left + bounds.width, y: bounds.top },
+        { x: bounds.left + bounds.width, y: bounds.top + bounds.height },
+        {
+          x: bounds.left + bounds.width * 0.5,
+          y: bounds.top + bounds.height,
+        },
+        { x: bounds.left, y: bounds.top + bounds.height },
+      ].map((point, pointIndex) => {
+        const wobble =
+          Math.sin(time / 145 + lineIndex * 1.2 + pointIndex) *
+          2.4 *
+          visibility;
+        return {
+          x: point.x + wobble,
+          y: point.y - wobble,
+        };
+      });
+
+      context.beginPath();
+      points.forEach((point, pointIndex) => {
+        if (pointIndex === 0) context.moveTo(point.x, point.y);
+        else context.lineTo(point.x, point.y);
+      });
+      context.closePath();
+      context.stroke();
+
+      points.forEach((point) => {
+        context.beginPath();
+        context.arc(point.x, point.y, 3.1, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "rgba(6, 31, 44, 0.82)";
+        context.stroke();
+        context.strokeStyle = `rgba(89, 213, 234, ${0.35 * visibility})`;
+      });
+    });
+
+    if (elapsed < 1) {
+      titleEffectFrame = window.requestAnimationFrame(drawTitleNodes);
+    } else {
+      titleEffectFrame = 0;
+    }
+  };
+
+  const stopTitleEffect = () => {
+    window.clearTimeout(titleEffectTimeout);
+    window.cancelAnimationFrame(titleEffectFrame);
+    titleEffectFrame = 0;
+    heroTitle.classList.remove("is-editing");
+    heroTitleTrigger.setAttribute("aria-pressed", "false");
+    heroTitleNodes
+      .getContext("2d")
+      .clearRect(0, 0, heroTitleNodes.width, heroTitleNodes.height);
+  };
+
+  heroTitleTrigger.addEventListener("click", () => {
+    window.clearTimeout(titleEffectTimeout);
+    window.cancelAnimationFrame(titleEffectFrame);
+    heroTitle.classList.add("is-editing");
+    heroTitleTrigger.setAttribute("aria-pressed", "true");
+    titleEffectStart = performance.now();
+    titleEffectFrame = window.requestAnimationFrame(drawTitleNodes);
+    titleEffectTimeout = window.setTimeout(stopTitleEffect, 1350);
+  });
+
+  hero.addEventListener(
+    "pointermove",
+    (event) => {
+      const bounds = hero.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      const time = performance.now();
+      const elapsed = Math.max(time - lastPointerTime, 8);
+      const speed =
+        lastPointerX === null
+          ? 0
+          : Math.hypot(x - lastPointerX, y - lastPointerY) / elapsed;
+      const hueShift = Math.max(
+        -48,
+        Math.min(48, (x / bounds.width - 0.5) * 48 + speed * 18),
+      );
+
+      hero.style.setProperty("--hero-pointer-x", `${(x / bounds.width) * 100}%`);
+      hero.style.setProperty("--hero-pointer-y", `${(y / bounds.height) * 100}%`);
+      hero.style.setProperty("--hero-pointer-hue", hueShift.toFixed(1));
+      hero.style.setProperty(
+        "--hero-energy",
+        Math.min(0.72, 0.28 + speed * 0.16).toFixed(3),
+      );
+
+      lastPointerX = x;
+      lastPointerY = y;
+      lastPointerTime = time;
+    },
+    { passive: true },
+  );
+
+  hero.addEventListener("pointerleave", () => {
+    lastPointerX = null;
+    lastPointerY = null;
+    hero.style.setProperty("--hero-pointer-hue", "0");
+    hero.style.setProperty("--hero-energy", "0.3");
+  });
+}
+
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {
     element.classList.add("is-visible");
@@ -553,6 +742,7 @@ let scrollTicking = false;
 const updateHeader = () => {
   const currentScroll = window.scrollY;
   siteHeader.classList.toggle("is-scrolled", currentScroll > 20);
+  updateHeroStory();
 
   if (currentScroll <= 80) setNavigationOpen(false);
 
