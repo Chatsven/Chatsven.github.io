@@ -538,7 +538,7 @@ h1 {
   color: var(--title-color, var(--ink));
   background: transparent;
   border: 0;
-  cursor: pointer;
+  cursor: default;
   font-family: "Fraunces Variable", "Songti SC", serif;
   font-size: var(--hero-title-size, clamp(5.2rem, 8.6vw, 8.9rem));
   font-variation-settings:
@@ -551,6 +551,7 @@ h1 {
   line-height: 0.82;
   text-align: left;
   text-wrap: balance;
+  pointer-events: none;
   transition:
     color 500ms ease,
     font-size 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -558,6 +559,12 @@ h1 {
     font-weight 360ms ease,
     letter-spacing 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
     -webkit-text-stroke-color 500ms ease;
+}
+
+.hero-char {
+  display: inline;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .hero-title-trigger:hover,
@@ -618,6 +625,11 @@ h1 {
   opacity: 1;
 }
 
+.hero-title.is-editing {
+  cursor: crosshair;
+  pointer-events: auto;
+}
+
 .hero-title.is-editing .hero-title-trigger {
   color: transparent;
   -webkit-text-stroke: 1.4px var(--ink);
@@ -631,6 +643,25 @@ h1 {
 
 .hero-title.is-editing .hero-line em,
 .hero-title.is-editing .hero-line i {
+  font-variation-settings:
+    "opsz" var(--title-opsz, 118),
+    "wght" 715,
+    "SOFT" 78,
+    "WONK" 1;
+}
+
+.hero-title.is-bold .hero-title-trigger {
+  font-variation-settings:
+    "opsz" var(--title-opsz, 118),
+    "wght" 760,
+    "SOFT" 78,
+    "WONK" 0;
+  font-weight: 760;
+  letter-spacing: var(--title-tracking-hover, -0.018em);
+}
+
+.hero-title.is-bold .hero-line em,
+.hero-title.is-bold .hero-line i {
   font-variation-settings:
     "opsz" var(--title-opsz, 118),
     "wght" 715,
@@ -756,7 +787,7 @@ h1 {
 }
 
 .hero[data-phase="2"] .hero-title-trigger {
-  --hero-title-size: clamp(3.7rem, 5.6vw, 5.9rem);
+  --hero-title-size: clamp(3.4rem, 5vw, 5.25rem);
 }
 
 .hero-art::before {

@@ -538,9 +538,41 @@ const updateHeroStory = () => {
 };
 
 if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
+  const lineElements = [...heroTitle.querySelectorAll(".hero-line")];
+  const lineOffsets = lineElements.map(() => ({ x: 0, y: 0 }));
+  let nodePoints = [];
+  let dragState = null;
+  let pendingExit = false;
+
+  const wrapCharacters = (parent) => {
+    [...parent.childNodes].forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const fragment = document.createDocumentFragment();
+
+        [...child.textContent].forEach((character) => {
+          if (/\s/.test(character)) {
+            fragment.append(character);
+            return;
+          }
+
+          const span = document.createElement("span");
+          span.className = "hero-char";
+          span.textContent = character;
+          fragment.append(span);
+        });
+
+        child.replaceWith(fragment);
+        return;
+      }
+
+      if (child instanceof Element) wrapCharacters(child);
+    });
+  };
+
+  lineElements.forEach(wrapCharacters);
+
   const drawTitleNodes = () => {
     const canvasBounds = heroTitleNodes.getBoundingClientRect();
-    const titleBounds = heroTitleTrigger.getBoundingClientRect();
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     const width = Math.max(1, Math.round(canvasBounds.width));
     const height = Math.max(1, Math.round(canvasBounds.height));
@@ -556,35 +588,29 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     const context = heroTitleNodes.getContext("2d");
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
+    nodePoints = [];
 
-    const offsetX = canvasBounds.left - titleBounds.left;
-    const offsetY = canvasBounds.top - titleBounds.top;
     const lineRects = [...heroTitle.querySelectorAll(".hero-line")].map(
       (line) => {
         const bounds = line.getBoundingClientRect();
         return {
-          left: bounds.left - titleBounds.left + offsetX,
-          top: bounds.top - titleBounds.top + offsetY,
+          left: bounds.left - canvasBounds.left,
+          top: bounds.top - canvasBounds.top,
           width: bounds.width,
           height: bounds.height,
         };
       },
     );
 
-    context.lineWidth = 0.8;
-    context.strokeStyle = "rgba(89, 213, 234, 0.35)";
-    context.fillStyle = "rgba(89, 213, 234, 0.95)";
+    context.lineWidth = 0.9;
+    context.strokeStyle = "rgba(89, 213, 234, 0.48)";
+    context.fillStyle = "#59d5ea";
 
-    lineRects.forEach((bounds) => {
+    lineRects.forEach((bounds, lineIndex) => {
       const points = [
         { x: bounds.left, y: bounds.top },
-        { x: bounds.left + bounds.width * 0.5, y: bounds.top },
         { x: bounds.left + bounds.width, y: bounds.top },
         { x: bounds.left + bounds.width, y: bounds.top + bounds.height },
-        {
-          x: bounds.left + bounds.width * 0.5,
-          y: bounds.top + bounds.height,
-        },
         { x: bounds.left, y: bounds.top + bounds.height },
       ];
 
@@ -596,32 +622,154 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
       context.closePath();
       context.stroke();
 
-      points.forEach((point) => {
+      points.forEach((point, pointIndex) => {
+        nodePoints.push({ ...point, lineIndex, pointIndex });
         context.beginPath();
-        context.arc(point.x, point.y, 3.1, 0, Math.PI * 2);
+        context.arc(point.x, point.y, 4.2, 0, Math.PI * 2);
         context.fill();
         context.strokeStyle = "rgba(6, 31, 44, 0.82)";
+        context.lineWidth = 1.2;
         context.stroke();
-        context.strokeStyle = "rgba(89, 213, 234, 0.35)";
+        context.strokeStyle = "rgba(89, 213, 234, 0.48)";
+        context.lineWidth = 0.9;
       });
     });
   };
 
   const clearTitleNodes = () => {
+    nodePoints = [];
     heroTitleNodes
       .getContext("2d")
       .clearRect(0, 0, heroTitleNodes.width, heroTitleNodes.height);
   };
 
-  heroTitleTrigger.addEventListener("click", () => {
-    const isEditing = heroTitle.classList.toggle("is-editing");
-    heroTitleTrigger.setAttribute("aria-pressed", String(isEditing));
+  const resetLineOffsets = () => {
+    lineOffsets.forEach((offset, index) => {
+      offset.x = 0;
+      offset.y = 0;
+      lineElements[index].style.transform = "";
+    });
+  };
 
-    if (isEditing) {
-      window.requestAnimationFrame(drawTitleNodes);
-    } else {
-      clearTitleNodes();
+  const exitTitleVector = () => {
+    heroTitle.classList.remove("is-editing");
+    heroTitle.classList.add("is-bold");
+    heroTitleTrigger.setAttribute("aria-pressed", "false");
+    resetLineOffsets();
+    clearTitleNodes();
+  };
+
+  const enterTitleVector = () => {
+    heroTitle.classList.remove("is-bold");
+    heroTitle.classList.add("is-editing");
+    heroTitleTrigger.setAttribute("aria-pressed", "true");
+    window.requestAnimationFrame(drawTitleNodes);
+  };
+
+  heroTitle.addEventListener("click", (event) => {
+    if (heroTitle.classList.contains("is-editing")) {
+      if (pendingExit) {
+        pendingExit = false;
+        exitTitleVector();
+      }
+      return;
     }
+
+    if (event.target.closest?.(".hero-char")) enterTitleVector();
+  });
+
+  heroTitleTrigger.addEventListener("keydown", (event) => {
+    if (
+      !heroTitle.classList.contains("is-editing") &&
+      (event.key === "Enter" || event.key === " ")
+    ) {
+      event.preventDefault();
+      enterTitleVector();
+    }
+  });
+
+  const getCanvasPoint = (event) => {
+    const bounds = heroTitleNodes.getBoundingClientRect();
+    return {
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    };
+  };
+
+  const findNode = (point) =>
+    nodePoints.find(
+      (node) => Math.hypot(node.x - point.x, node.y - point.y) < 11,
+    ) ?? null;
+
+  heroTitle.addEventListener("pointerdown", (event) => {
+    const point = getCanvasPoint(event);
+    const node = findNode(point);
+
+    if (!node) {
+      pendingExit = true;
+      return;
+    }
+
+    pendingExit = false;
+    dragState = {
+      ...node,
+      pointerX: point.x,
+      pointerY: point.y,
+    };
+    heroTitle.setPointerCapture(event.pointerId);
+    heroTitle.style.cursor = "grabbing";
+    event.preventDefault();
+  });
+
+  heroTitle.addEventListener(
+    "pointermove",
+    (event) => {
+      const point = getCanvasPoint(event);
+
+      if (!dragState) {
+        heroTitle.style.cursor = findNode(point) ? "grab" : "crosshair";
+        return;
+      }
+
+      const deltaX = point.x - dragState.pointerX;
+      const deltaY = point.y - dragState.pointerY;
+      const offset = lineOffsets[dragState.lineIndex];
+      offset.x += deltaX;
+      offset.y += deltaY;
+      lineElements[dragState.lineIndex].style.transform =
+        `translate3d(${offset.x.toFixed(1)}px, ${offset.y.toFixed(1)}px, 0)`;
+      dragState.pointerX = point.x;
+      dragState.pointerY = point.y;
+      drawTitleNodes();
+    },
+    { passive: true },
+  );
+
+  const finishDragging = () => {
+    dragState = null;
+    heroTitle.style.cursor = "crosshair";
+  };
+
+  heroTitle.addEventListener("pointerup", finishDragging);
+  heroTitle.addEventListener("pointercancel", finishDragging);
+  heroTitle.addEventListener("pointerleave", () => {
+    if (!heroTitle.classList.contains("is-editing")) {
+      heroTitle.classList.remove("is-bold");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      heroTitle.classList.contains("is-editing")
+    ) {
+      exitTitleVector();
+      heroTitleTrigger.focus();
+    }
+  });
+
+  document.fonts.ready.then(() => {
+    if (heroTitle.classList.contains("is-editing")) drawTitleNodes();
   });
 
   window.addEventListener(
