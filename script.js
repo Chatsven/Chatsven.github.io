@@ -441,7 +441,7 @@ if (hero && gridCanvas) {
 
         const resizeGrid = () => {
           const bounds = hero.getBoundingClientRect();
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
           state.width = Math.max(1, Math.round(bounds.width));
           state.height = Math.max(1, Math.round(bounds.height));
           gridCanvas.width = Math.round(state.width * dpr);
@@ -501,7 +501,7 @@ const heroTitle = document.querySelector(".hero-title");
 const heroTitleTrigger = document.querySelector("[data-variable-title]");
 const heroTitleNodes = document.querySelector(".hero-title-nodes");
 const heroProgressLabel = document.querySelector(".hero-progress-label");
-const phaseLabels = ["SCROLL", "MORPH", "IDENTITY"];
+const phaseLabels = ["01 · TYPOGRAPHY", "03 · IDENTITY"];
 
 const updateHeroStory = () => {
   if (!hero || !heroStory) return;
@@ -515,33 +515,33 @@ const updateHeroStory = () => {
     1,
     Math.max(0, (window.scrollY - storyTop) / scrollRange),
   );
-  const phase = progress < 0.28 ? 0 : progress < 0.72 ? 1 : 2;
+  const phase = progress < 0.5 ? 0 : 2;
 
   hero.dataset.phase = String(phase);
   hero.style.setProperty("--hero-progress", progress.toFixed(4));
-  hero.style.setProperty("--hero-base-hue", (194 + progress * 112).toFixed(1));
   hero.style.setProperty("--title-opsz", (118 + progress * 26).toFixed(1));
   hero.style.setProperty("--title-weight", (480 + progress * 340).toFixed(1));
   hero.style.setProperty("--title-soft", (30 + progress * 58).toFixed(1));
-  hero.style.setProperty("--title-wonk", phase === 1 ? "1" : "0");
+  hero.style.setProperty("--title-wonk", progress > 0.7 ? "1" : "0");
+  hero.style.setProperty(
+    "--title-tracking",
+    `${(-0.04 + progress * 0.03).toFixed(4)}em`,
+  );
+  hero.style.setProperty(
+    "--title-tracking-hover",
+    `${(-0.018 + progress * 0.008).toFixed(4)}em`,
+  );
 
   if (heroProgressLabel) {
-    heroProgressLabel.textContent = phaseLabels[phase];
+    heroProgressLabel.textContent = phaseLabels[phase === 2 ? 1 : 0];
   }
 };
 
 if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
-  let titleEffectFrame = 0;
-  let titleEffectStart = 0;
-  let titleEffectTimeout = 0;
-  let lastPointerX = null;
-  let lastPointerY = null;
-  let lastPointerTime = 0;
-
-  const drawTitleNodes = (time) => {
+  const drawTitleNodes = () => {
     const canvasBounds = heroTitleNodes.getBoundingClientRect();
     const titleBounds = heroTitleTrigger.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     const width = Math.max(1, Math.round(canvasBounds.width));
     const height = Math.max(1, Math.round(canvasBounds.height));
 
@@ -557,8 +557,6 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
 
-    const elapsed = (time - titleEffectStart) / 1350;
-    const visibility = Math.sin(Math.min(elapsed, 1) * Math.PI);
     const offsetX = canvasBounds.left - titleBounds.left;
     const offsetY = canvasBounds.top - titleBounds.top;
     const lineRects = [...heroTitle.querySelectorAll(".hero-line")].map(
@@ -574,10 +572,10 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     );
 
     context.lineWidth = 0.8;
-    context.strokeStyle = `rgba(89, 213, 234, ${0.35 * visibility})`;
-    context.fillStyle = `rgba(89, 213, 234, ${0.95 * visibility})`;
+    context.strokeStyle = "rgba(89, 213, 234, 0.35)";
+    context.fillStyle = "rgba(89, 213, 234, 0.95)";
 
-    lineRects.forEach((bounds, lineIndex) => {
+    lineRects.forEach((bounds) => {
       const points = [
         { x: bounds.left, y: bounds.top },
         { x: bounds.left + bounds.width * 0.5, y: bounds.top },
@@ -588,16 +586,7 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
           y: bounds.top + bounds.height,
         },
         { x: bounds.left, y: bounds.top + bounds.height },
-      ].map((point, pointIndex) => {
-        const wobble =
-          Math.sin(time / 145 + lineIndex * 1.2 + pointIndex) *
-          2.4 *
-          visibility;
-        return {
-          x: point.x + wobble,
-          y: point.y - wobble,
-        };
-      });
+      ];
 
       context.beginPath();
       points.forEach((point, pointIndex) => {
@@ -613,76 +602,45 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
         context.fill();
         context.strokeStyle = "rgba(6, 31, 44, 0.82)";
         context.stroke();
-        context.strokeStyle = `rgba(89, 213, 234, ${0.35 * visibility})`;
+        context.strokeStyle = "rgba(89, 213, 234, 0.35)";
       });
     });
-
-    if (elapsed < 1) {
-      titleEffectFrame = window.requestAnimationFrame(drawTitleNodes);
-    } else {
-      titleEffectFrame = 0;
-    }
   };
 
-  const stopTitleEffect = () => {
-    window.clearTimeout(titleEffectTimeout);
-    window.cancelAnimationFrame(titleEffectFrame);
-    titleEffectFrame = 0;
-    heroTitle.classList.remove("is-editing");
-    heroTitleTrigger.setAttribute("aria-pressed", "false");
+  const clearTitleNodes = () => {
     heroTitleNodes
       .getContext("2d")
       .clearRect(0, 0, heroTitleNodes.width, heroTitleNodes.height);
   };
 
   heroTitleTrigger.addEventListener("click", () => {
-    window.clearTimeout(titleEffectTimeout);
-    window.cancelAnimationFrame(titleEffectFrame);
-    heroTitle.classList.add("is-editing");
-    heroTitleTrigger.setAttribute("aria-pressed", "true");
-    titleEffectStart = performance.now();
-    titleEffectFrame = window.requestAnimationFrame(drawTitleNodes);
-    titleEffectTimeout = window.setTimeout(stopTitleEffect, 1350);
+    const isEditing = heroTitle.classList.toggle("is-editing");
+    heroTitleTrigger.setAttribute("aria-pressed", String(isEditing));
+
+    if (isEditing) {
+      window.requestAnimationFrame(drawTitleNodes);
+    } else {
+      clearTitleNodes();
+    }
   });
 
-  hero.addEventListener(
-    "pointermove",
-    (event) => {
-      const bounds = hero.getBoundingClientRect();
-      const x = event.clientX - bounds.left;
-      const y = event.clientY - bounds.top;
-      const time = performance.now();
-      const elapsed = Math.max(time - lastPointerTime, 8);
-      const speed =
-        lastPointerX === null
-          ? 0
-          : Math.hypot(x - lastPointerX, y - lastPointerY) / elapsed;
-      const hueShift = Math.max(
-        -48,
-        Math.min(48, (x / bounds.width - 0.5) * 48 + speed * 18),
-      );
-
-      hero.style.setProperty("--hero-pointer-x", `${(x / bounds.width) * 100}%`);
-      hero.style.setProperty("--hero-pointer-y", `${(y / bounds.height) * 100}%`);
-      hero.style.setProperty("--hero-pointer-hue", hueShift.toFixed(1));
-      hero.style.setProperty(
-        "--hero-energy",
-        Math.min(0.72, 0.28 + speed * 0.16).toFixed(3),
-      );
-
-      lastPointerX = x;
-      lastPointerY = y;
-      lastPointerTime = time;
+  window.addEventListener(
+    "resize",
+    () => {
+      if (heroTitle.classList.contains("is-editing")) drawTitleNodes();
     },
     { passive: true },
   );
 
-  hero.addEventListener("pointerleave", () => {
-    lastPointerX = null;
-    lastPointerY = null;
-    hero.style.setProperty("--hero-pointer-hue", "0");
-    hero.style.setProperty("--hero-energy", "0.3");
-  });
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (heroTitle.classList.contains("is-editing")) {
+        window.requestAnimationFrame(drawTitleNodes);
+      }
+    },
+    { passive: true },
+  );
 }
 
 if (reducedMotion || !("IntersectionObserver" in window)) {
