@@ -548,7 +548,6 @@ const updateHeroStory = () => {
 
 if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
   const lineElements = [...heroTitle.querySelectorAll(".hero-line")];
-  const lineOffsets = lineElements.map(() => ({ x: 0, y: 0 }));
   let nodePoints = [];
   let dragState = null;
   let pendingExit = false;
@@ -580,6 +579,7 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
 
   lineElements.forEach(wrapCharacters);
   const characterElements = [...heroTitle.querySelectorAll(".hero-char")];
+  const characterOffsets = characterElements.map(() => ({ x: 0, y: 0 }));
 
   heroTitle.addEventListener(
     "pointermove",
@@ -644,35 +644,52 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     );
 
     context.lineWidth = 0.9;
-    context.strokeStyle = "rgba(89, 213, 234, 0.48)";
-    context.fillStyle = "#59d5ea";
+    context.strokeStyle = "rgba(89, 213, 234, 0.4)";
+    lineRects.forEach((bounds) => {
+      context.strokeRect(
+        bounds.left,
+        bounds.top,
+        bounds.width,
+        bounds.height,
+      );
+    });
 
-    lineRects.forEach((bounds, lineIndex) => {
-      const points = [
-        { x: bounds.left, y: bounds.top },
-        { x: bounds.left + bounds.width, y: bounds.top },
-        { x: bounds.left + bounds.width, y: bounds.top + bounds.height },
-        { x: bounds.left, y: bounds.top + bounds.height },
-      ];
-
-      context.beginPath();
-      points.forEach((point, pointIndex) => {
-        if (pointIndex === 0) context.moveTo(point.x, point.y);
-        else context.lineTo(point.x, point.y);
+    let characterIndex = 0;
+    lineElements.forEach((line) => {
+      const characters = [...line.querySelectorAll(".hero-char")];
+      const centers = characters.map((character) => {
+        const bounds = character.getBoundingClientRect();
+        return {
+          x:
+            bounds.left -
+            canvasBounds.left +
+            bounds.width / 2,
+          y:
+            bounds.top -
+            canvasBounds.top +
+            bounds.height / 2,
+        };
       });
-      context.closePath();
-      context.stroke();
 
-      points.forEach((point, pointIndex) => {
-        nodePoints.push({ ...point, lineIndex, pointIndex });
+      if (centers.length > 1) {
         context.beginPath();
-        context.arc(point.x, point.y, 4.2, 0, Math.PI * 2);
+        centers.forEach((point, index) => {
+          if (index === 0) context.moveTo(point.x, point.y);
+          else context.lineTo(point.x, point.y);
+        });
+        context.stroke();
+      }
+
+      centers.forEach((point) => {
+        nodePoints.push({ ...point, characterIndex });
+        context.beginPath();
+        context.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+        context.fillStyle = "#59d5ea";
         context.fill();
         context.strokeStyle = "rgba(6, 31, 44, 0.82)";
-        context.lineWidth = 1.2;
+        context.lineWidth = 1.1;
         context.stroke();
-        context.strokeStyle = "rgba(89, 213, 234, 0.48)";
-        context.lineWidth = 0.9;
+        characterIndex += 1;
       });
     });
   };
@@ -684,11 +701,11 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
       .clearRect(0, 0, heroTitleNodes.width, heroTitleNodes.height);
   };
 
-  const resetLineOffsets = () => {
-    lineOffsets.forEach((offset, index) => {
+  const resetCharacterOffsets = () => {
+    characterOffsets.forEach((offset, index) => {
       offset.x = 0;
       offset.y = 0;
-      lineElements[index].style.transform = "";
+      characterElements[index].style.transform = "";
     });
   };
 
@@ -696,7 +713,7 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     heroTitle.classList.remove("is-editing");
     heroTitle.classList.add("is-bold");
     heroTitleTrigger.setAttribute("aria-pressed", "false");
-    resetLineOffsets();
+    resetCharacterOffsets();
     clearTitleNodes();
   };
 
@@ -774,10 +791,10 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
 
       const deltaX = point.x - dragState.pointerX;
       const deltaY = point.y - dragState.pointerY;
-      const offset = lineOffsets[dragState.lineIndex];
+      const offset = characterOffsets[dragState.characterIndex];
       offset.x += deltaX;
       offset.y += deltaY;
-      lineElements[dragState.lineIndex].style.transform =
+      characterElements[dragState.characterIndex].style.transform =
         `translate3d(${offset.x.toFixed(1)}px, ${offset.y.toFixed(1)}px, 0)`;
       dragState.pointerX = point.x;
       dragState.pointerY = point.y;

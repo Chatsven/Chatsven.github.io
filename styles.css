@@ -6,6 +6,15 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Fraunces Variable";
+  src: url("assets/fonts/fraunces-variable-italic-latin.woff2")
+    format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
   --paper: #f4fafb;
   --paper-bright: #fbffff;
