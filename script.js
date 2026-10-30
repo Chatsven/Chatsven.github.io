@@ -40,6 +40,10 @@ const reducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
+document.documentElement.dataset.motion = reducedMotion
+  ? "reduced"
+  : "checking";
+
 const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
@@ -453,7 +457,7 @@ if (hero && gridCanvas) {
         resizeGrid();
         new ResizeObserver(resizeGrid).observe(hero);
 
-        if (finePointer && !reducedMotion) {
+        const enableGridInteraction = () => {
           hero.addEventListener("pointerenter", (event) => {
             const bounds = hero.getBoundingClientRect();
             const x = event.clientX - bounds.left;
@@ -490,6 +494,56 @@ if (hero && gridCanvas) {
             state.targetSet = false;
             startRendering();
           });
+        };
+
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = debugInfo
+          ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+          : "";
+        const connection =
+          navigator.connection ??
+          navigator.mozConnection ??
+          navigator.webkitConnection;
+        const cores = navigator.hardwareConcurrency ?? 8;
+        const memory = navigator.deviceMemory ?? 8;
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const renderedPixels = innerWidth * innerHeight * dpr * dpr;
+        const softwareRenderer =
+          /swiftshader|llvmpipe|software/i.test(renderer);
+        const eligibleForInteraction =
+          finePointer &&
+          !reducedMotion &&
+          !connection?.saveData &&
+          cores >= 6 &&
+          memory >= 4 &&
+          !softwareRenderer &&
+          renderedPixels < 7_500_000;
+
+        if (!eligibleForInteraction) {
+          document.documentElement.dataset.motion = "reduced";
+        } else {
+          let frames = 0;
+          let startTime = 0;
+
+          const measureFrameRate = (time) => {
+            if (!startTime) startTime = time;
+            frames += 1;
+
+            if (frames < 36) {
+              window.requestAnimationFrame(measureFrameRate);
+              return;
+            }
+
+            const fps = (frames * 1000) / (time - startTime);
+            const canAnimate = fps >= 26;
+            document.documentElement.dataset.motion = canAnimate
+              ? "full"
+              : "reduced";
+
+            if (canAnimate) enableGridInteraction();
+          };
+
+          window.requestAnimationFrame(measureFrameRate);
         }
       }
     }
@@ -498,8 +552,6 @@ if (hero && gridCanvas) {
 
 const heroStory = document.querySelector("[data-hero-story]");
 const heroTitle = document.querySelector(".hero-title");
-const heroTitleTrigger = document.querySelector("[data-variable-title]");
-const heroTitleNodes = document.querySelector(".hero-title-nodes");
 const heroProgressLabel = document.querySelector(".hero-progress-label");
 const phaseLabels = ["01 · TYPOGRAPHY", "03 · IDENTITY"];
 
@@ -524,15 +576,6 @@ const updateHeroStory = () => {
   hero.style.setProperty("--title-soft", (30 + progress * 58).toFixed(1));
   hero.style.setProperty("--title-wonk", progress > 0.7 ? "1" : "0");
   hero.style.setProperty(
-    "--italic-weight",
-    (435 + progress * 320).toFixed(1),
-  );
-  hero.style.setProperty(
-    "--italic-soft",
-    (30 + progress * 58).toFixed(1),
-  );
-  hero.style.setProperty("--italic-wonk", "1");
-  hero.style.setProperty(
     "--title-tracking",
     `${(-0.04 + progress * 0.03).toFixed(4)}em`,
   );
@@ -546,11 +589,8 @@ const updateHeroStory = () => {
   }
 };
 
-if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
+if (hero && heroTitle) {
   const lineElements = [...heroTitle.querySelectorAll(".hero-line")];
-  let nodePoints = [];
-  let dragState = null;
-  let pendingExit = false;
 
   const wrapCharacters = (parent) => {
     [...parent.childNodes].forEach((child) => {
@@ -579,13 +619,10 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
 
   lineElements.forEach(wrapCharacters);
   const characterElements = [...heroTitle.querySelectorAll(".hero-char")];
-  const characterOffsets = characterElements.map(() => ({ x: 0, y: 0 }));
 
   heroTitle.addEventListener(
     "pointermove",
     (event) => {
-      if (heroTitle.classList.contains("is-editing")) return;
-
       const characterHit = characterElements.some((character) => {
         const bounds = character.getBoundingClientRect();
         return (
@@ -612,242 +649,9 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
     { passive: true },
   );
 
-  const drawTitleNodes = () => {
-    const canvasBounds = heroTitleNodes.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-    const width = Math.max(1, Math.round(canvasBounds.width));
-    const height = Math.max(1, Math.round(canvasBounds.height));
-
-    if (
-      heroTitleNodes.width !== Math.round(width * ratio) ||
-      heroTitleNodes.height !== Math.round(height * ratio)
-    ) {
-      heroTitleNodes.width = Math.round(width * ratio);
-      heroTitleNodes.height = Math.round(height * ratio);
-    }
-
-    const context = heroTitleNodes.getContext("2d");
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
-    nodePoints = [];
-
-    const lineRects = [...heroTitle.querySelectorAll(".hero-line")].map(
-      (line) => {
-        const bounds = line.getBoundingClientRect();
-        return {
-          left: bounds.left - canvasBounds.left,
-          top: bounds.top - canvasBounds.top,
-          width: bounds.width,
-          height: bounds.height,
-        };
-      },
-    );
-
-    context.lineWidth = 0.9;
-    context.strokeStyle = "rgba(89, 213, 234, 0.4)";
-    lineRects.forEach((bounds) => {
-      context.strokeRect(
-        bounds.left,
-        bounds.top,
-        bounds.width,
-        bounds.height,
-      );
-    });
-
-    let characterIndex = 0;
-    lineElements.forEach((line) => {
-      const characters = [...line.querySelectorAll(".hero-char")];
-      const centers = characters.map((character) => {
-        const bounds = character.getBoundingClientRect();
-        return {
-          x:
-            bounds.left -
-            canvasBounds.left +
-            bounds.width / 2,
-          y:
-            bounds.top -
-            canvasBounds.top +
-            bounds.height / 2,
-        };
-      });
-
-      if (centers.length > 1) {
-        context.beginPath();
-        centers.forEach((point, index) => {
-          if (index === 0) context.moveTo(point.x, point.y);
-          else context.lineTo(point.x, point.y);
-        });
-        context.stroke();
-      }
-
-      centers.forEach((point) => {
-        nodePoints.push({ ...point, characterIndex });
-        context.beginPath();
-        context.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
-        context.fillStyle = "#59d5ea";
-        context.fill();
-        context.strokeStyle = "rgba(6, 31, 44, 0.82)";
-        context.lineWidth = 1.1;
-        context.stroke();
-        characterIndex += 1;
-      });
-    });
-  };
-
-  const clearTitleNodes = () => {
-    nodePoints = [];
-    heroTitleNodes
-      .getContext("2d")
-      .clearRect(0, 0, heroTitleNodes.width, heroTitleNodes.height);
-  };
-
-  const resetCharacterOffsets = () => {
-    characterOffsets.forEach((offset, index) => {
-      offset.x = 0;
-      offset.y = 0;
-      characterElements[index].style.transform = "";
-    });
-  };
-
-  const exitTitleVector = () => {
-    heroTitle.classList.remove("is-editing");
-    heroTitle.classList.add("is-bold");
-    heroTitleTrigger.setAttribute("aria-pressed", "false");
-    resetCharacterOffsets();
-    clearTitleNodes();
-  };
-
-  const enterTitleVector = () => {
-    heroTitle.classList.remove("is-bold");
-    heroTitle.classList.add("is-editing");
-    heroTitleTrigger.setAttribute("aria-pressed", "true");
-    window.requestAnimationFrame(drawTitleNodes);
-  };
-
-  heroTitle.addEventListener("click", (event) => {
-    if (heroTitle.classList.contains("is-editing")) {
-      if (pendingExit) {
-        pendingExit = false;
-        exitTitleVector();
-      }
-      return;
-    }
-
-    if (event.target.closest?.(".hero-char")) enterTitleVector();
-  });
-
-  heroTitleTrigger.addEventListener("keydown", (event) => {
-    if (
-      !heroTitle.classList.contains("is-editing") &&
-      (event.key === "Enter" || event.key === " ")
-    ) {
-      event.preventDefault();
-      enterTitleVector();
-    }
-  });
-
-  const getCanvasPoint = (event) => {
-    const bounds = heroTitleNodes.getBoundingClientRect();
-    return {
-      x: event.clientX - bounds.left,
-      y: event.clientY - bounds.top,
-    };
-  };
-
-  const findNode = (point) =>
-    nodePoints.find(
-      (node) => Math.hypot(node.x - point.x, node.y - point.y) < 11,
-    ) ?? null;
-
-  heroTitle.addEventListener("pointerdown", (event) => {
-    const point = getCanvasPoint(event);
-    const node = findNode(point);
-
-    if (!node) {
-      pendingExit = true;
-      return;
-    }
-
-    pendingExit = false;
-    dragState = {
-      ...node,
-      pointerX: point.x,
-      pointerY: point.y,
-    };
-    heroTitle.setPointerCapture(event.pointerId);
-    heroTitle.style.cursor = "grabbing";
-    event.preventDefault();
-  });
-
-  heroTitle.addEventListener(
-    "pointermove",
-    (event) => {
-      const point = getCanvasPoint(event);
-
-      if (!dragState) {
-        heroTitle.style.cursor = findNode(point) ? "grab" : "crosshair";
-        return;
-      }
-
-      const deltaX = point.x - dragState.pointerX;
-      const deltaY = point.y - dragState.pointerY;
-      const offset = characterOffsets[dragState.characterIndex];
-      offset.x += deltaX;
-      offset.y += deltaY;
-      characterElements[dragState.characterIndex].style.transform =
-        `translate3d(${offset.x.toFixed(1)}px, ${offset.y.toFixed(1)}px, 0)`;
-      dragState.pointerX = point.x;
-      dragState.pointerY = point.y;
-      drawTitleNodes();
-    },
-    { passive: true },
-  );
-
-  const finishDragging = () => {
-    dragState = null;
-    heroTitle.style.cursor = "crosshair";
-  };
-
-  heroTitle.addEventListener("pointerup", finishDragging);
-  heroTitle.addEventListener("pointercancel", finishDragging);
   heroTitle.addEventListener("pointerleave", () => {
     heroTitle.classList.remove("is-hovered");
-    if (!heroTitle.classList.contains("is-editing")) {
-      heroTitle.classList.remove("is-bold");
-    }
   });
-
-  document.addEventListener("keydown", (event) => {
-    if (
-      event.key === "Escape" &&
-      heroTitle.classList.contains("is-editing")
-    ) {
-      exitTitleVector();
-      heroTitleTrigger.focus();
-    }
-  });
-
-  document.fonts.ready.then(() => {
-    if (heroTitle.classList.contains("is-editing")) drawTitleNodes();
-  });
-
-  window.addEventListener(
-    "resize",
-    () => {
-      if (heroTitle.classList.contains("is-editing")) drawTitleNodes();
-    },
-    { passive: true },
-  );
-
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (heroTitle.classList.contains("is-editing")) {
-        window.requestAnimationFrame(drawTitleNodes);
-      }
-    },
-    { passive: true },
-  );
 }
 
 if (reducedMotion || !("IntersectionObserver" in window)) {

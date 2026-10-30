@@ -6,15 +6,6 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: "Fraunces Variable";
-  src: url("assets/fonts/fraunces-variable-italic-latin.woff2")
-    format("woff2");
-  font-style: italic;
-  font-weight: 100 900;
-  font-display: swap;
-}
-
 :root {
   --paper: #f4fafb;
   --paper-bright: #fbffff;
@@ -396,7 +387,12 @@ button {
   filter: blur(52px) saturate(1.12);
   transform: translate3d(-2%, -1%, 0) rotate(-8deg) scale(1.08);
   animation: hero-color-drift 34s ease-in-out infinite alternate;
+  animation-play-state: paused;
   will-change: transform;
+}
+
+html[data-motion="full"] .hero-color-field::before {
+  animation-play-state: running;
 }
 
 @keyframes hero-color-drift {
@@ -572,13 +568,11 @@ h1 {
 
 .hero-char {
   display: inline;
-  cursor: pointer;
+  cursor: default;
   pointer-events: auto;
 }
 
-.hero-title.is-hovered .hero-title-trigger,
-.hero-title.is-bold .hero-title-trigger,
-.hero-title-trigger:focus-visible {
+.hero-title.is-hovered .hero-title-trigger {
   font-variation-settings:
     "opsz" var(--title-opsz, 118),
     "wght" 760,
@@ -588,78 +582,10 @@ h1 {
   letter-spacing: var(--title-tracking-hover, -0.018em);
 }
 
-.hero-title.is-hovered .hero-line em,
-.hero-title.is-hovered .hero-line i,
-.hero-title.is-bold .hero-line em,
-.hero-title.is-bold .hero-line i,
-.hero-title-trigger:focus-visible .hero-line em,
-.hero-title-trigger:focus-visible .hero-line i {
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" 715,
-    "SOFT" 78,
-    "WONK" 1;
-}
-
-.hero-title-trigger:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 0.5rem;
-}
-
 .hero-line {
   display: block;
   width: max-content;
   max-width: 100%;
-}
-
-.hero-line em,
-.hero-line i {
-  font-style: italic;
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" var(--italic-weight, 435),
-    "SOFT" var(--italic-soft, 30),
-    "WONK" var(--italic-wonk, 1);
-}
-
-.hero-title-nodes {
-  position: absolute;
-  z-index: 2;
-  inset: -1.25rem;
-  width: calc(100% + 2.5rem);
-  height: calc(100% + 2.5rem);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 180ms ease;
-}
-
-.hero-title.is-editing .hero-title-nodes {
-  opacity: 1;
-}
-
-.hero-title.is-editing {
-  cursor: crosshair;
-  pointer-events: auto;
-}
-
-.hero-title.is-editing .hero-title-trigger {
-  color: transparent;
-  -webkit-text-stroke: 1.4px var(--ink);
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" 760,
-    "SOFT" 78,
-    "WONK" 0;
-  font-weight: 760;
-}
-
-.hero-title.is-editing .hero-line em,
-.hero-title.is-editing .hero-line i {
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" 715,
-    "SOFT" 78,
-    "WONK" 1;
 }
 
 .hero-links {
