@@ -552,8 +552,6 @@ if (hero && gridCanvas) {
 
 const heroStory = document.querySelector("[data-hero-story]");
 const heroTitle = document.querySelector(".hero-title");
-const heroProgressLabel = document.querySelector(".hero-progress-label");
-const phaseLabels = ["01 · TYPOGRAPHY", "03 · IDENTITY"];
 
 const updateHeroStory = () => {
   if (!hero || !heroStory) return;
@@ -577,16 +575,14 @@ const updateHeroStory = () => {
   hero.style.setProperty("--title-wonk", progress > 0.7 ? "1" : "0");
   hero.style.setProperty(
     "--title-tracking",
-    `${(-0.04 + progress * 0.03).toFixed(4)}em`,
+    `${(-0.022 + progress * 0.03).toFixed(4)}em`,
   );
   hero.style.setProperty(
     "--title-tracking-hover",
-    `${(-0.018 + progress * 0.008).toFixed(4)}em`,
+    `${(-0.008 + progress * 0.012).toFixed(4)}em`,
   );
 
-  if (heroProgressLabel) {
-    heroProgressLabel.textContent = phaseLabels[phase === 2 ? 1 : 0];
-  }
+  if (phase === 2) heroTitle?.classList.remove("is-hovered");
 };
 
 if (hero && heroTitle) {
@@ -623,6 +619,11 @@ if (hero && heroTitle) {
   heroTitle.addEventListener(
     "pointermove",
     (event) => {
+      if (hero.dataset.phase === "2") {
+        heroTitle.classList.remove("is-hovered");
+        return;
+      }
+
       const characterHit = characterElements.some((character) => {
         const bounds = character.getBoundingClientRect();
         return (
@@ -710,8 +711,11 @@ let scrollTicking = false;
 
 const updateHeader = () => {
   const currentScroll = window.scrollY;
-  siteHeader.classList.toggle("is-scrolled", currentScroll > 20);
   updateHeroStory();
+  const heroStoryEnd = heroStory
+    ? heroStory.offsetTop + heroStory.offsetHeight
+    : 0;
+  siteHeader.classList.toggle("is-scrolled", currentScroll >= heroStoryEnd);
 
   if (currentScroll <= 80) setNavigationOpen(false);
 

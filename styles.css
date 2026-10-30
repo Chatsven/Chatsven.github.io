@@ -552,8 +552,8 @@ h1 {
     "SOFT" var(--title-soft, 30),
     "WONK" var(--title-wonk, 0);
   font-weight: var(--title-weight, 480);
-  letter-spacing: var(--title-tracking, -0.04em);
-  line-height: 0.82;
+  letter-spacing: var(--title-tracking, -0.022em);
+  line-height: 0.92;
   text-align: left;
   text-wrap: balance;
   pointer-events: none;
@@ -579,7 +579,7 @@ h1 {
     "SOFT" 78,
     "WONK" 0;
   font-weight: 760;
-  letter-spacing: var(--title-tracking-hover, -0.018em);
+  letter-spacing: var(--title-tracking-hover, -0.008em);
 }
 
 .hero-line {
@@ -624,15 +624,7 @@ h1 {
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  color: rgba(6, 31, 44, 0.52);
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-}
-
-.hero-progress-label {
-  margin-right: 0.3rem;
+  gap: 0.5rem;
 }
 
 .hero-progress i {
@@ -707,6 +699,12 @@ h1 {
 
 .hero[data-phase="2"] .hero-title-trigger {
   --hero-title-size: clamp(3.4rem, 5vw, 5.25rem);
+  font-variation-settings:
+    "opsz" var(--title-opsz, 144),
+    "wght" 820,
+    "SOFT" var(--title-soft, 88),
+    "WONK" var(--title-wonk, 1);
+  font-weight: 820;
 }
 
 .hero-art::before {
@@ -1408,7 +1406,7 @@ h1 {
 
   .hero-title-trigger {
     --hero-title-size: clamp(3.3rem, 12vw, 5.8rem) !important;
-    letter-spacing: -0.025em !important;
+    letter-spacing: -0.012em !important;
   }
 
   .hero-art {
