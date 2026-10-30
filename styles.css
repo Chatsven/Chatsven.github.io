@@ -567,7 +567,8 @@ h1 {
   pointer-events: auto;
 }
 
-.hero-title-trigger:hover,
+.hero-title.is-hovered .hero-title-trigger,
+.hero-title.is-bold .hero-title-trigger,
 .hero-title-trigger:focus-visible {
   font-variation-settings:
     "opsz" var(--title-opsz, 118),
@@ -578,8 +579,10 @@ h1 {
   letter-spacing: var(--title-tracking-hover, -0.018em);
 }
 
-.hero-title-trigger:hover .hero-line em,
-.hero-title-trigger:hover .hero-line i,
+.hero-title.is-hovered .hero-line em,
+.hero-title.is-hovered .hero-line i,
+.hero-title.is-bold .hero-line em,
+.hero-title.is-bold .hero-line i,
 .hero-title-trigger:focus-visible .hero-line em,
 .hero-title-trigger:focus-visible .hero-line i {
   font-variation-settings:
@@ -605,9 +608,9 @@ h1 {
   font-style: italic;
   font-variation-settings:
     "opsz" var(--title-opsz, 118),
-    "wght" calc(var(--title-weight, 480) - 45),
-    "SOFT" var(--title-soft, 30),
-    "WONK" 1;
+    "wght" var(--italic-weight, 435),
+    "SOFT" var(--italic-soft, 30),
+    "WONK" var(--italic-wonk, 1);
 }
 
 .hero-title-nodes {
@@ -643,25 +646,6 @@ h1 {
 
 .hero-title.is-editing .hero-line em,
 .hero-title.is-editing .hero-line i {
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" 715,
-    "SOFT" 78,
-    "WONK" 1;
-}
-
-.hero-title.is-bold .hero-title-trigger {
-  font-variation-settings:
-    "opsz" var(--title-opsz, 118),
-    "wght" 760,
-    "SOFT" 78,
-    "WONK" 0;
-  font-weight: 760;
-  letter-spacing: var(--title-tracking-hover, -0.018em);
-}
-
-.hero-title.is-bold .hero-line em,
-.hero-title.is-bold .hero-line i {
   font-variation-settings:
     "opsz" var(--title-opsz, 118),
     "wght" 715,

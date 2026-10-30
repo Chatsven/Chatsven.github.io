@@ -524,6 +524,15 @@ const updateHeroStory = () => {
   hero.style.setProperty("--title-soft", (30 + progress * 58).toFixed(1));
   hero.style.setProperty("--title-wonk", progress > 0.7 ? "1" : "0");
   hero.style.setProperty(
+    "--italic-weight",
+    (435 + progress * 320).toFixed(1),
+  );
+  hero.style.setProperty(
+    "--italic-soft",
+    (30 + progress * 58).toFixed(1),
+  );
+  hero.style.setProperty("--italic-wonk", "1");
+  hero.style.setProperty(
     "--title-tracking",
     `${(-0.04 + progress * 0.03).toFixed(4)}em`,
   );
@@ -570,6 +579,38 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
   };
 
   lineElements.forEach(wrapCharacters);
+  const characterElements = [...heroTitle.querySelectorAll(".hero-char")];
+
+  heroTitle.addEventListener(
+    "pointermove",
+    (event) => {
+      if (heroTitle.classList.contains("is-editing")) return;
+
+      const characterHit = characterElements.some((character) => {
+        const bounds = character.getBoundingClientRect();
+        return (
+          event.clientX >= bounds.left - 2 &&
+          event.clientX <= bounds.right + 2 &&
+          event.clientY >= bounds.top - 2 &&
+          event.clientY <= bounds.bottom + 2
+        );
+      });
+      const lineHit =
+        heroTitle.classList.contains("is-hovered") &&
+        lineElements.some((line) => {
+          const bounds = line.getBoundingClientRect();
+          return (
+            event.clientX >= bounds.left - 8 &&
+            event.clientX <= bounds.right + 8 &&
+            event.clientY >= bounds.top - 8 &&
+            event.clientY <= bounds.bottom + 8
+          );
+        });
+
+      heroTitle.classList.toggle("is-hovered", characterHit || lineHit);
+    },
+    { passive: true },
+  );
 
   const drawTitleNodes = () => {
     const canvasBounds = heroTitleNodes.getBoundingClientRect();
@@ -753,6 +794,7 @@ if (hero && heroTitle && heroTitleTrigger && heroTitleNodes) {
   heroTitle.addEventListener("pointerup", finishDragging);
   heroTitle.addEventListener("pointercancel", finishDragging);
   heroTitle.addEventListener("pointerleave", () => {
+    heroTitle.classList.remove("is-hovered");
     if (!heroTitle.classList.contains("is-editing")) {
       heroTitle.classList.remove("is-bold");
     }
