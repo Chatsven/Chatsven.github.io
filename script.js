@@ -823,45 +823,8 @@ if (
     });
   };
 
-  const updateCardLayers = (swiper) => {
-    swiper.slides.forEach((slide) => {
-      const card = slide.querySelector(".album-card");
-      if (!card) return;
-
-      const distance = Math.min(2, Math.abs(slide.progress || 0));
-      const direction = Math.sign(slide.progress || 0);
-      const rotate = Math.max(
-        -50,
-        Math.min(50, Math.abs(slide.progress || 0) * 42),
-      );
-      const scale = Math.max(0.49, 1 - distance * 0.25);
-      const opacity = Math.max(0.3, 1 - distance * 0.3);
-      const blur = Math.min(1.5, distance * 0.78);
-      const saturate = Math.max(0.55, 1 - distance * 0.26);
-      const depth = -Math.min(124, distance * 62);
-
-      card.style.transform =
-        "translateZ(" +
-        depth.toFixed(1) +
-        "px) rotateY(" +
-        (rotate * -direction).toFixed(2) +
-        "deg) scale(" +
-        scale.toFixed(3) +
-        ")";
-      card.style.opacity = opacity.toFixed(3);
-      card.style.filter =
-        "blur(" +
-        blur.toFixed(2) +
-        "px) saturate(" +
-        saturate.toFixed(3) +
-        ")";
-      slide.style.zIndex = String(
-        Math.max(1, 20 - Math.round(distance * 5)),
-      );
-    });
-  };
-
   const coverflow = new Swiper(albumStage, {
+    effect: "coverflow",
     grabCursor: true,
     centeredSlides: true,
     slidesPerView: "auto",
@@ -874,6 +837,13 @@ if (
     resistanceRatio: 0.68,
     longSwipesRatio: 0.25,
     touchStartPreventDefault: false,
+    coverflowEffect: {
+      rotate: 50,
+      stretch: 0,
+      depth: 100,
+      modifier: 1,
+      slideShadows: true,
+    },
     mousewheel: {
       forceToAxis: true,
       releaseOnEdges: false,
@@ -892,15 +862,11 @@ if (
         activeProject = Number(slide.dataset.projectIndex);
         renderProjectMeta(activeProject);
         syncActiveCard(swiper);
-        updateCardLayers(swiper);
       },
       slideChange(swiper) {
         const slide = swiper.slides[swiper.activeIndex];
         updateProjectMeta(Number(slide.dataset.projectIndex));
         syncActiveCard(swiper);
-      },
-      progress(swiper) {
-        updateCardLayers(swiper);
       },
     },
   });
