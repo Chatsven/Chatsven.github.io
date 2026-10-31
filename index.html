@@ -27,7 +27,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=28" />
+    <link rel="stylesheet" href="styles.css?v=29" />
     <noscript>
       <style>
         .reveal {
@@ -52,7 +52,6 @@
           />
         </a>
         <nav class="nav" id="site-nav" aria-label="主导航">
-          <a href="#about" data-nav-section="about">关于</a>
           <a href="#work" data-nav-section="work">作品</a>
           <a href="#contact" data-nav-section="contact">联系</a>
           <a
@@ -213,93 +212,137 @@
         </div>
       </div>
 
-      <section class="section about" id="about">
-        <div class="section-heading reveal">
-          <span class="section-index">01</span>
-          <h2>关于我</h2>
-          <span class="section-en">ABOUT</span>
-        </div>
-
-        <div class="about-grid">
-          <p class="about-lead reveal">
-            我相信，好的工具应该让
-            <em>复杂的事情变简单</em>，让更多人的注意力回到内容本身。
-          </p>
-          <div class="about-body reveal">
-            <p>
-              我是澪空，一名关注开源工具、知识社区与网页体验的创作者。我喜欢从一个真实的小问题出发，把一个模糊的想法，逐步打磨成别人愿意每天使用的东西。
-            </p>
-            <p>
-              目前主要参与维基媒体相关项目。我也在持续学习前端、设计，以及人与信息之间那些容易被忽略的细节。
-            </p>
-          </div>
-        </div>
-
-        <div class="principles">
-          <article class="principle reveal">
-            <span class="principle-number">01</span>
-            <h3>从问题开始</h3>
-            <p>先理解真实场景，再决定需要什么功能。</p>
-          </article>
-          <article class="principle reveal">
-            <span class="principle-number">02</span>
-            <h3>把细节做透</h3>
-            <p>速度、可读性和手感，都是产品的一部分。</p>
-          </article>
-          <article class="principle reveal">
-            <span class="principle-number">03</span>
-            <h3>让知识开放</h3>
-            <p>支持那些让知识更自由流动的开放项目。</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="work" id="work">
+      <section class="work" id="work" aria-labelledby="work-title">
         <div class="work-inner">
-          <div class="section-heading section-heading-light reveal">
-            <span class="section-index">02</span>
-            <h2>精选作品</h2>
-            <span class="section-en">SELECTED WORK</span>
+          <div class="work-heading reveal">
+            <div>
+              <p class="work-kicker">01 · SELECTED WORK</p>
+              <h2 id="work-title">PROJECTS</h2>
+            </div>
+            <p class="work-counter" aria-live="polite">
+              <span data-project-current>01</span>
+              <span aria-hidden="true">/</span>
+              <span>03</span>
+            </p>
           </div>
 
-          <article class="project reveal">
-            <div class="project-visual">
-              <img
-                src="assets/citizen-preview.jpg"
-                alt="Citizen Userscript 在维基百科页面上的界面预览"
-                width="1800"
-                height="1128"
-                loading="lazy"
-              />
-              <span class="project-badge">FEATURED PROJECT</span>
+          <div
+            class="album-switcher reveal"
+            data-album-switcher
+            tabindex="0"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="精选作品相册"
+          >
+            <div class="album-stage" data-album-stage>
+              <button
+                class="album-card album-card-citizen"
+                type="button"
+                data-project-slide
+                data-position="active"
+                aria-label="查看作品：Citizen Userscript for Wikimedia"
+                aria-pressed="true"
+              >
+                <img
+                  src="assets/citizen-preview.jpg"
+                  alt=""
+                  width="1800"
+                  height="1128"
+                />
+                <span class="album-card-code">01 / USERSCRIPT</span>
+              </button>
+
+              <button
+                class="album-card album-card-site"
+                type="button"
+                data-project-slide
+                data-position="next"
+                aria-label="查看作品：澪空の自介站"
+                aria-pressed="false"
+              >
+                <span class="album-cover-orbit" aria-hidden="true"></span>
+                <img
+                  class="album-cover-logo"
+                  src="assets/mio-logo.svg"
+                  alt=""
+                  width="316"
+                  height="108"
+                />
+                <span class="album-cover-caption">
+                  WEB EXPERIENCE<br />2026
+                </span>
+                <span class="album-card-code">02 / WEB</span>
+              </button>
+
+              <button
+                class="album-card album-card-archive"
+                type="button"
+                data-project-slide
+                data-position="prev"
+                aria-label="查看作品：更多开源项目"
+                aria-pressed="false"
+              >
+                <span class="album-archive-grid" aria-hidden="true"></span>
+                <img
+                  class="album-cover-github"
+                  src="assets/icons/github.svg"
+                  alt=""
+                  width="44"
+                  height="44"
+                />
+                <span class="album-cover-caption">
+                  OPEN SOURCE<br />ARCHIVE
+                </span>
+                <span class="album-card-code">03 / GITHUB</span>
+              </button>
             </div>
-            <div class="project-info">
-              <div class="project-title-row">
-                <div>
-                  <p class="project-type">USERSCRIPT · JAVASCRIPT</p>
-                  <h3>Citizen Userscript<br />for Wikimedia</h3>
-                </div>
-                <a
-                  class="project-arrow"
-                  href="https://github.com/Chatsven/citizen-userscript-wikimedia"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="在 GitHub 查看 Citizen Userscript for Wikimedia"
-                >
-                  ↗
-                </a>
-              </div>
-              <p class="project-description">
-                一个为维基媒体项目打造的 Citizen
-                界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。
-              </p>
-              <div class="project-tags" aria-label="项目标签">
+
+            <div class="album-controls">
+              <button
+                type="button"
+                data-project-prev
+                aria-label="上一件作品"
+              >
+                ←
+              </button>
+              <span>DRAG / SWIPE</span>
+              <button
+                type="button"
+                data-project-next
+                aria-label="下一件作品"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <div class="project-meta reveal" aria-live="polite">
+            <p class="project-type" data-project-type>
+              USERSCRIPT · JAVASCRIPT
+            </p>
+            <h3 data-project-title>Citizen Userscript for Wikimedia</h3>
+            <p class="project-description" data-project-description>
+              一个为维基媒体项目打造的 Citizen
+              界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。
+            </p>
+            <div class="project-meta-footer">
+              <div class="project-tags" data-project-tags aria-label="项目标签">
                 <span>MediaWiki</span>
                 <span>Open Source</span>
                 <span>UI</span>
               </div>
+              <a
+                class="project-link"
+                data-project-link
+                href="https://github.com/Chatsven/citizen-userscript-wikimedia"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>查看作品</span>
+                <span aria-hidden="true">↗</span>
+              </a>
             </div>
-          </article>
+          </div>
 
           <a
             class="more-link reveal"
@@ -361,6 +404,6 @@
       </div>
     </footer>
 
-    <script src="script.js?v=32"></script>
+    <script src="script.js?v=33"></script>
   </body>
 </html>

@@ -655,6 +655,216 @@ if (hero && heroTitle) {
   });
 }
 
+const albumSwitcher = document.querySelector("[data-album-switcher]");
+const albumStage = document.querySelector("[data-album-stage]");
+const projectSlides = [
+  ...document.querySelectorAll("[data-project-slide]"),
+];
+const projectMeta = document.querySelector(".project-meta");
+const projectCurrent = document.querySelector("[data-project-current]");
+const projectType = document.querySelector("[data-project-type]");
+const projectTitle = document.querySelector("[data-project-title]");
+const projectDescription = document.querySelector(
+  "[data-project-description]",
+);
+const projectTags = document.querySelector("[data-project-tags]");
+const projectLink = document.querySelector("[data-project-link]");
+const projectPrev = document.querySelector("[data-project-prev]");
+const projectNext = document.querySelector("[data-project-next]");
+const projects = [
+  {
+    type: "USERSCRIPT · JAVASCRIPT",
+    title: "Citizen Userscript for Wikimedia",
+    description:
+      "一个为维基媒体项目打造的 Citizen 界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。",
+    tags: ["MediaWiki", "Open Source", "UI"],
+    href: "https://github.com/Chatsven/citizen-userscript-wikimedia",
+  },
+  {
+    type: "WEB EXPERIENCE · HTML",
+    title: "澪空の自介站",
+    description:
+      "以可变字体、动态网格与自适应动效构成的个人网站。视觉会随着浏览进度改变，也会按照装置性能选择合适的效果。",
+    tags: ["HTML", "CSS", "JavaScript"],
+    href: "https://mio.cool/",
+  },
+  {
+    type: "OPEN SOURCE · GITHUB",
+    title: "更多开源项目",
+    description:
+      "从维基媒体工具到网页实验，更多仍在维护与持续更新的作品都能在 GitHub 找到。",
+    tags: ["Open Source", "Web", "Ongoing"],
+    href: "https://github.com/Chatsven?tab=repositories",
+  },
+];
+
+if (
+  albumSwitcher &&
+  albumStage &&
+  projectSlides.length === projects.length &&
+  projectMeta &&
+  projectCurrent &&
+  projectType &&
+  projectTitle &&
+  projectDescription &&
+  projectTags &&
+  projectLink
+) {
+  let activeProject = 0;
+  let projectMetaTimer = 0;
+  let pointerStartX = 0;
+  let pointerStartY = 0;
+  let pointerDeltaX = 0;
+  let dragPointerId = null;
+  let suppressProjectClick = false;
+
+  const renderProjectMeta = () => {
+    const project = projects[activeProject];
+    projectCurrent.textContent = String(activeProject + 1).padStart(2, "0");
+    projectType.textContent = project.type;
+    projectTitle.textContent = project.title;
+    projectDescription.textContent = project.description;
+    projectTags.replaceChildren(
+      ...project.tags.map((tag) => {
+        const element = document.createElement("span");
+        element.textContent = tag;
+        return element;
+      }),
+    );
+    projectLink.href = project.href;
+    projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
+  };
+
+  const selectProject = (requestedIndex, animate = true) => {
+    activeProject =
+      (requestedIndex + projects.length) % projects.length;
+
+    projectSlides.forEach((slide, index) => {
+      const offset =
+        (index - activeProject + projects.length) % projects.length;
+      const position =
+        offset === 0
+          ? "active"
+          : offset === 1
+            ? "next"
+            : offset === projects.length - 1
+              ? "prev"
+              : offset < projects.length / 2
+                ? "far-next"
+                : "far-prev";
+
+      slide.dataset.position = position;
+      slide.setAttribute("aria-pressed", String(index === activeProject));
+    });
+
+    projectCurrent.textContent = String(activeProject + 1).padStart(
+      2,
+      "0",
+    );
+    window.clearTimeout(projectMetaTimer);
+
+    if (!animate || reducedMotion) {
+      projectMeta.classList.remove("is-refreshing");
+      renderProjectMeta();
+      return;
+    }
+
+    projectMeta.classList.add("is-refreshing");
+    projectMetaTimer = window.setTimeout(() => {
+      renderProjectMeta();
+      projectMeta.classList.remove("is-refreshing");
+    }, 120);
+  };
+
+  projectSlides.forEach((slide, index) => {
+    slide.addEventListener("click", () => selectProject(index));
+  });
+
+  projectPrev?.addEventListener("click", () => {
+    selectProject(activeProject - 1);
+  });
+
+  projectNext?.addEventListener("click", () => {
+    selectProject(activeProject + 1);
+  });
+
+  albumSwitcher.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectProject(activeProject - 1);
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectProject(activeProject + 1);
+    }
+  });
+
+  const endProjectDrag = (event) => {
+    if (dragPointerId === null) return;
+
+    if (albumStage.hasPointerCapture(dragPointerId)) {
+      albumStage.releasePointerCapture(dragPointerId);
+    }
+
+    const travelled = pointerDeltaX;
+    pointerDeltaX = 0;
+    dragPointerId = null;
+    albumStage.style.setProperty("--album-drag", "0px");
+    albumSwitcher.classList.remove("is-dragging");
+
+    if (Math.abs(travelled) > 48) {
+      suppressProjectClick = true;
+      selectProject(activeProject + (travelled < 0 ? 1 : -1));
+    }
+  };
+
+  albumStage.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    pointerStartX = event.clientX;
+    pointerStartY = event.clientY;
+    pointerDeltaX = 0;
+    dragPointerId = event.pointerId;
+    albumStage.setPointerCapture(event.pointerId);
+  });
+
+  albumStage.addEventListener(
+    "pointermove",
+    (event) => {
+      if (event.pointerId !== dragPointerId) return;
+
+      const deltaX = event.clientX - pointerStartX;
+      const deltaY = event.clientY - pointerStartY;
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+      pointerDeltaX = Math.max(-160, Math.min(160, deltaX));
+      albumSwitcher.classList.add("is-dragging");
+      albumStage.style.setProperty(
+        "--album-drag",
+        `${pointerDeltaX.toFixed(1)}px`,
+      );
+      event.preventDefault();
+    },
+    { passive: false },
+  );
+
+  albumStage.addEventListener("pointerup", endProjectDrag);
+  albumStage.addEventListener("pointercancel", endProjectDrag);
+  albumStage.addEventListener(
+    "click",
+    (event) => {
+      if (!suppressProjectClick) return;
+      suppressProjectClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    { capture: true },
+  );
+
+  selectProject(0, false);
+}
+
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {
     element.classList.add("is-visible");
