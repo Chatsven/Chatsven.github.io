@@ -663,6 +663,7 @@ const projectSlides = [
 ];
 const projectMeta = document.querySelector(".project-meta");
 const projectCurrent = document.querySelector("[data-project-current]");
+const projectTotal = document.querySelector("[data-project-total]");
 const projectType = document.querySelector("[data-project-type]");
 const projectTitle = document.querySelector("[data-project-title]");
 const projectDescription = document.querySelector(
@@ -695,6 +696,24 @@ const projects = [
     tags: ["Open Source", "Web", "Ongoing"],
     href: "https://github.com/Chatsven?tab=repositories",
   },
+  {
+    type: "RESERVED · FUTURE WORK",
+    title: "预留作品位 04",
+    description:
+      "这个位置留给下一件正在构思的作品，内容与预览会在完成后补上。",
+    tags: ["Reserved", "Coming Soon"],
+    href: "",
+    placeholder: true,
+  },
+  {
+    type: "RESERVED · FUTURE WORK",
+    title: "预留作品位 05",
+    description:
+      "这是第二个预留展示位，用来保持专辑切换器完整的五格节奏。",
+    tags: ["Reserved", "Coming Soon"],
+    href: "",
+    placeholder: true,
+  },
 ];
 
 if (
@@ -704,6 +723,7 @@ if (
   projectSlides.length === projects.length &&
   projectMeta &&
   projectCurrent &&
+  projectTotal &&
   projectType &&
   projectTitle &&
   projectDescription &&
@@ -728,13 +748,19 @@ if (
   const lastProjectSlide = projectSlides[projectSlides.length - 1];
   albumTrack.prepend(
     cloneProjectSlide(
+      projectSlides[projectSlides.length - 2],
+      projects.length - 2,
+      "leading-outer",
+    ),
+    cloneProjectSlide(
       lastProjectSlide,
       projects.length - 1,
-      "last",
+      "leading",
     ),
   );
   albumTrack.append(
-    cloneProjectSlide(firstProjectSlide, 0, "first"),
+    cloneProjectSlide(firstProjectSlide, 0, "trailing"),
+    cloneProjectSlide(projectSlides[1], 1, "trailing-outer"),
   );
   const carouselSlides = [
     ...albumTrack.querySelectorAll("[data-project-slide]"),
@@ -747,6 +773,8 @@ if (
   let albumSettleTimer = 0;
   let dragState = null;
   let suppressProjectClick = false;
+
+  projectTotal.textContent = String(projects.length).padStart(2, "0");
 
   const renderProjectMeta = () => {
     const project = projects[activeProject];
@@ -762,6 +790,7 @@ if (
       }),
     );
     projectLink.href = project.href;
+    projectLink.hidden = Boolean(project.placeholder);
     projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
   };
 
