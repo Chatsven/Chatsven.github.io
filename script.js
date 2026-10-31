@@ -710,9 +710,41 @@ if (
   projectTags &&
   projectLink
 ) {
+  const cloneProjectSlide = (source, projectIndex, position) => {
+    const clone = source.cloneNode(true);
+    clone.dataset.projectIndex = String(projectIndex);
+    clone.dataset.projectClone = position;
+    clone.classList.remove("is-active");
+    clone.querySelectorAll(".is-active").forEach((element) => {
+      element.classList.remove("is-active");
+    });
+    const cloneCard = clone.querySelector(".album-card");
+    cloneCard?.setAttribute("aria-hidden", "true");
+    cloneCard?.setAttribute("aria-pressed", "false");
+    if (cloneCard) cloneCard.tabIndex = -1;
+    return clone;
+  };
+  const firstProjectSlide = projectSlides[0];
+  const lastProjectSlide = projectSlides[projectSlides.length - 1];
+  albumTrack.prepend(
+    cloneProjectSlide(
+      lastProjectSlide,
+      projects.length - 1,
+      "last",
+    ),
+  );
+  albumTrack.append(
+    cloneProjectSlide(firstProjectSlide, 0, "first"),
+  );
+  const carouselSlides = [
+    ...albumTrack.querySelectorAll("[data-project-slide]"),
+  ];
+
   let activeProject = -1;
+  let currentSlide = null;
   let projectMetaTimer = 0;
   let albumScrollTicking = false;
+  let albumSettleTimer = 0;
   let dragState = null;
   let suppressProjectClick = false;
 
@@ -733,36 +765,40 @@ if (
     projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
   };
 
-  const getClosestProject = () => {
+  const getClosestSlide = () => {
     const stageCenter =
       albumStage.scrollLeft + albumStage.clientWidth / 2;
-    let closestProject = 0;
+    let closestSlide = carouselSlides[0];
     let closestDistance = Number.POSITIVE_INFINITY;
 
-    projectSlides.forEach((slide, index) => {
+    carouselSlides.forEach((slide) => {
       const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
       const distance = Math.abs(slideCenter - stageCenter);
       if (distance < closestDistance) {
         closestDistance = distance;
-        closestProject = index;
+        closestSlide = slide;
       }
     });
 
-    return closestProject;
+    return closestSlide;
   };
 
-  const setActiveProject = (index, animate = true) => {
-    if (index === activeProject) return;
+  const setActiveProject = (slide, animate = true) => {
+    if (!slide) return;
+    const index = Number(slide.dataset.projectIndex);
+    const projectChanged = index !== activeProject;
     activeProject = index;
+    currentSlide = slide;
 
-    projectSlides.forEach((slide, slideIndex) => {
-      const isActive = slideIndex === activeProject;
-      const card = slide.querySelector(".album-card");
-      slide.classList.toggle("is-active", isActive);
+    carouselSlides.forEach((carouselSlide) => {
+      const isActive = carouselSlide === slide;
+      const card = carouselSlide.querySelector(".album-card");
+      carouselSlide.classList.toggle("is-active", isActive);
       card?.classList.toggle("is-active", isActive);
       card?.setAttribute("aria-pressed", String(isActive));
     });
 
+    if (!projectChanged) return;
     projectCurrent.textContent = String(activeProject + 1).padStart(
       2,
       "0",
@@ -782,15 +818,11 @@ if (
     }, 120);
   };
 
-  const scrollToProject = (
-    index,
+  const scrollToSlide = (
+    slide,
     behavior = reducedMotion ? "auto" : "smooth",
   ) => {
-    const boundedIndex = Math.max(
-      0,
-      Math.min(projectSlides.length - 1, index),
-    );
-    const slide = projectSlides[boundedIndex];
+    if (!slide) return;
     const targetLeft =
       slide.offsetLeft -
       (albumStage.clientWidth - slide.offsetWidth) / 2;
@@ -801,14 +833,50 @@ if (
     });
   };
 
+  const scrollToProject = (index) => {
+    scrollToSlide(projectSlides[index]);
+  };
+
+  const stepProject = (direction) => {
+    const currentIndex = Math.max(
+      0,
+      carouselSlides.indexOf(getClosestSlide()),
+    );
+    scrollToSlide(
+      carouselSlides[
+        Math.max(
+          0,
+          Math.min(carouselSlides.length - 1, currentIndex + direction),
+        )
+      ],
+    );
+  };
+
+  const settleProject = () => {
+    const closestSlide = getClosestSlide();
+    if (!closestSlide.dataset.projectClone) {
+      setActiveProject(closestSlide);
+      return;
+    }
+
+    const targetSlide =
+      projectSlides[Number(closestSlide.dataset.projectIndex)];
+    scrollToSlide(targetSlide, "auto");
+    setActiveProject(targetSlide, false);
+  };
+
   const updateAlbumState = () => {
-    setActiveProject(getClosestProject());
+    setActiveProject(getClosestSlide());
+    window.clearTimeout(albumSettleTimer);
+    if (!albumSwitcher.classList.contains("is-dragging")) {
+      albumSettleTimer = window.setTimeout(settleProject, 160);
+    }
     albumScrollTicking = false;
   };
 
   const syncAlbumGeometry = () => {
     const slideWidth =
-      projectSlides[0]?.getBoundingClientRect().width ?? 0;
+      carouselSlides[0]?.getBoundingClientRect().width ?? 0;
     const gutter = Math.max(
       0,
       (albumStage.clientWidth - slideWidth) / 2,
@@ -828,12 +896,12 @@ if (
   albumSwitcher.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      scrollToProject(activeProject - 1);
+      stepProject(-1);
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      scrollToProject(activeProject + 1);
+      stepProject(1);
     }
   });
 
@@ -860,7 +928,7 @@ if (
 
     if (!wasDragged) return;
     suppressProjectClick = true;
-    scrollToProject(getClosestProject());
+    settleProject();
     window.setTimeout(() => {
       suppressProjectClick = false;
     }, 0);
@@ -910,14 +978,14 @@ if (
   );
 
   syncAlbumGeometry();
-  scrollToProject(0, "auto");
-  setActiveProject(0, false);
+  scrollToSlide(projectSlides[0], "auto");
+  setActiveProject(projectSlides[0], false);
 
   if ("ResizeObserver" in window) {
     new ResizeObserver(() => {
       syncAlbumGeometry();
       if (activeProject >= 0) {
-        scrollToProject(activeProject, "auto");
+        scrollToSlide(currentSlide, "auto");
       }
     }).observe(albumStage);
   }
