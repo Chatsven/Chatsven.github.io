@@ -27,7 +27,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=30" />
+    <link rel="stylesheet" href="styles.css?v=31" />
     <noscript>
       <style>
         .reveal {
@@ -195,6 +195,8 @@
           </div>
         </div>
 
+        <span class="hero-snap hero-snap-one" aria-hidden="true"></span>
+        <span class="hero-snap hero-snap-three" aria-hidden="true"></span>
       </section>
 
       <div class="ticker" aria-hidden="true">
@@ -233,68 +235,75 @@
             aria-label="精选作品相册"
           >
             <div class="album-stage" data-album-stage>
-              <button
-                class="album-card album-card-citizen"
-                type="button"
-                data-project-slide
-                data-position="active"
-                aria-label="查看作品：Citizen Userscript for Wikimedia"
-                aria-pressed="true"
-              >
-                <img
-                  src="assets/citizen-preview.jpg"
-                  alt=""
-                  width="1800"
-                  height="1128"
-                />
-                <span class="album-card-code">01 / USERSCRIPT</span>
-              </button>
+              <div class="album-track" data-album-track>
+                <div class="album-slide" data-project-slide>
+                  <button
+                    class="album-card album-card-citizen is-active"
+                    type="button"
+                    aria-label="查看作品：Citizen Userscript for Wikimedia"
+                    aria-pressed="true"
+                  >
+                    <img
+                      src="assets/citizen-preview.jpg"
+                      alt=""
+                      width="1800"
+                      height="1128"
+                    />
+                    <span class="album-card-code">01 / USERSCRIPT</span>
+                  </button>
+                </div>
 
-              <button
-                class="album-card album-card-site"
-                type="button"
-                data-project-slide
-                data-position="next"
-                aria-label="查看作品：澪空の自介站"
-                aria-pressed="false"
-              >
-                <span class="album-cover-orbit" aria-hidden="true"></span>
-                <img
-                  class="album-cover-logo"
-                  src="assets/mio-logo.svg"
-                  alt=""
-                  width="316"
-                  height="108"
-                />
-                <span class="album-cover-caption">
-                  WEB EXPERIENCE<br />2026
-                </span>
-                <span class="album-card-code">02 / WEB</span>
-              </button>
+                <div class="album-slide" data-project-slide>
+                  <button
+                    class="album-card album-card-site"
+                    type="button"
+                    aria-label="查看作品：澪空の自介站"
+                    aria-pressed="false"
+                  >
+                    <span
+                      class="album-cover-orbit"
+                      aria-hidden="true"
+                    ></span>
+                    <img
+                      class="album-cover-logo"
+                      src="assets/mio-logo.svg"
+                      alt=""
+                      width="316"
+                      height="108"
+                    />
+                    <span class="album-cover-caption">
+                      WEB EXPERIENCE<br />2026
+                    </span>
+                    <span class="album-card-code">02 / WEB</span>
+                  </button>
+                </div>
 
-              <button
-                class="album-card album-card-archive"
-                type="button"
-                data-project-slide
-                data-position="prev"
-                aria-label="查看作品：更多开源项目"
-                aria-pressed="false"
-              >
-                <span class="album-archive-grid" aria-hidden="true"></span>
-                <img
-                  class="album-cover-github"
-                  src="assets/icons/github.svg"
-                  alt=""
-                  width="44"
-                  height="44"
-                />
-                <span class="album-cover-caption">
-                  OPEN SOURCE<br />ARCHIVE
-                </span>
-                <span class="album-card-code">03 / GITHUB</span>
-              </button>
+                <div class="album-slide" data-project-slide>
+                  <button
+                    class="album-card album-card-archive"
+                    type="button"
+                    aria-label="查看作品：更多开源项目"
+                    aria-pressed="false"
+                  >
+                    <span
+                      class="album-archive-grid"
+                      aria-hidden="true"
+                    ></span>
+                    <img
+                      class="album-cover-github"
+                      src="assets/icons/github.svg"
+                      alt=""
+                      width="44"
+                      height="44"
+                    />
+                    <span class="album-cover-caption">
+                      OPEN SOURCE<br />ARCHIVE
+                    </span>
+                    <span class="album-card-code">03 / GITHUB</span>
+                  </button>
+                </div>
+              </div>
             </div>
-
           </div>
 
           <div class="project-meta reveal" aria-live="polite">
@@ -385,6 +394,6 @@
       </div>
     </footer>
 
-    <script src="script.js?v=34"></script>
+    <script src="script.js?v=35"></script>
   </body>
 </html>

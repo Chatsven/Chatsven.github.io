@@ -47,10 +47,6 @@ document.documentElement.dataset.motion = reducedMotion
 const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
-let wheelAnimationFrame = 0;
-let wheelPositionY = window.scrollY;
-let wheelTargetY = window.scrollY;
-let wheelLastFrameTime = 0;
 
 const resolveAnchorElement = (target) =>
   target.querySelector(".section-heading") ?? target;
@@ -75,15 +71,8 @@ const cancelAnchorAnimation = () => {
   anchorAnimationFrame = 0;
 };
 
-const cancelWheelDamping = () => {
-  if (!wheelAnimationFrame) return;
-  window.cancelAnimationFrame(wheelAnimationFrame);
-  wheelAnimationFrame = 0;
-};
-
 const dampedScrollToY = (requestedTargetY) => {
   cancelAnchorAnimation();
-  cancelWheelDamping();
 
   const maxScrollY = Math.max(
     0,
@@ -165,19 +154,15 @@ anchorLinks.forEach((link) => {
 });
 
 window.addEventListener(
-  "touchstart",
-  () => {
-    cancelAnchorAnimation();
-    cancelWheelDamping();
-  },
+  "wheel",
+  cancelAnchorAnimation,
   { passive: true },
 );
-window.addEventListener("pointerdown", cancelWheelDamping, {
-  passive: true,
-});
-window.addEventListener("keydown", cancelWheelDamping, {
-  passive: true,
-});
+window.addEventListener(
+  "touchstart",
+  cancelAnchorAnimation,
+  { passive: true },
+);
 
 const initialAnchor = location.hash.length > 1
   ? document.querySelector(location.hash)
@@ -186,90 +171,6 @@ const initialAnchor = location.hash.length > 1
 if (initialAnchor) {
   window.requestAnimationFrame(() => dampedScrollTo(initialAnchor));
 }
-
-const maxWheelScrollY = () =>
-  Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-
-const dampWheelStep = (time) => {
-  const delta = Math.min(
-    Math.max((time - wheelLastFrameTime) / 1000, 0),
-    1 / 30,
-  );
-  wheelLastFrameTime = time;
-  const target = Math.min(maxWheelScrollY(), Math.max(0, wheelTargetY));
-  const easing = reducedMotion ? 1 : 1 - Math.exp(-18 * delta);
-  wheelPositionY += (target - wheelPositionY) * easing;
-
-  if (Math.abs(target - wheelPositionY) < 0.35) {
-    wheelPositionY = target;
-    window.scrollTo(0, target);
-    wheelAnimationFrame = 0;
-    return;
-  }
-
-  window.scrollTo(0, wheelPositionY);
-  wheelAnimationFrame = window.requestAnimationFrame(dampWheelStep);
-};
-
-window.addEventListener(
-  "wheel",
-  (event) => {
-    cancelAnchorAnimation();
-
-    if (
-      reducedMotion ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      Math.abs(event.deltaX) > Math.abs(event.deltaY)
-    ) {
-      cancelWheelDamping();
-      return;
-    }
-
-    const multiplier =
-      event.deltaMode === WheelEvent.DOM_DELTA_LINE
-        ? 16
-        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-          ? window.innerHeight
-          : 1;
-    const delta = Math.max(
-      -1200,
-      Math.min(1200, event.deltaY * multiplier),
-    );
-    if (!delta) return;
-
-    const currentY = window.scrollY;
-    const maximumY = maxWheelScrollY();
-    if (
-      (!wheelAnimationFrame && Math.abs(currentY - wheelPositionY) > 2) ||
-      (currentY <= 0 && delta < 0) ||
-      (currentY >= maximumY && delta > 0)
-    ) {
-      wheelPositionY = currentY;
-      wheelTargetY = currentY;
-    }
-
-    if (
-      (currentY <= 0 && delta < 0) ||
-      (currentY >= maximumY && delta > 0)
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    wheelTargetY = Math.min(
-      maximumY,
-      Math.max(0, wheelTargetY + delta),
-    );
-
-    if (!wheelAnimationFrame) {
-      wheelPositionY = currentY;
-      wheelLastFrameTime = performance.now();
-      wheelAnimationFrame = window.requestAnimationFrame(dampWheelStep);
-    }
-  },
-  { passive: false },
-);
 
 const hero = document.querySelector(".hero");
 const gridCanvas = document.querySelector(".hero-grid-canvas");
@@ -756,6 +657,7 @@ if (hero && heroTitle) {
 
 const albumSwitcher = document.querySelector("[data-album-switcher]");
 const albumStage = document.querySelector("[data-album-stage]");
+const albumTrack = document.querySelector("[data-album-track]");
 const projectSlides = [
   ...document.querySelectorAll("[data-project-slide]"),
 ];
@@ -798,6 +700,7 @@ const projects = [
 if (
   albumSwitcher &&
   albumStage &&
+  albumTrack &&
   projectSlides.length === projects.length &&
   projectMeta &&
   projectCurrent &&
@@ -807,12 +710,10 @@ if (
   projectTags &&
   projectLink
 ) {
-  let activeProject = 0;
+  let activeProject = -1;
   let projectMetaTimer = 0;
-  let pointerStartX = 0;
-  let pointerStartY = 0;
-  let pointerDeltaX = 0;
-  let dragPointerId = null;
+  let albumScrollTicking = false;
+  let dragState = null;
   let suppressProjectClick = false;
 
   const renderProjectMeta = () => {
@@ -832,26 +733,34 @@ if (
     projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
   };
 
-  const selectProject = (requestedIndex, animate = true) => {
-    activeProject =
-      (requestedIndex + projects.length) % projects.length;
+  const getClosestProject = () => {
+    const stageCenter =
+      albumStage.scrollLeft + albumStage.clientWidth / 2;
+    let closestProject = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
 
     projectSlides.forEach((slide, index) => {
-      const offset =
-        (index - activeProject + projects.length) % projects.length;
-      const position =
-        offset === 0
-          ? "active"
-          : offset === 1
-            ? "next"
-            : offset === projects.length - 1
-              ? "prev"
-              : offset < projects.length / 2
-                ? "far-next"
-                : "far-prev";
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const distance = Math.abs(slideCenter - stageCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestProject = index;
+      }
+    });
 
-      slide.dataset.position = position;
-      slide.setAttribute("aria-pressed", String(index === activeProject));
+    return closestProject;
+  };
+
+  const setActiveProject = (index, animate = true) => {
+    if (index === activeProject) return;
+    activeProject = index;
+
+    projectSlides.forEach((slide, slideIndex) => {
+      const isActive = slideIndex === activeProject;
+      const card = slide.querySelector(".album-card");
+      slide.classList.toggle("is-active", isActive);
+      card?.classList.toggle("is-active", isActive);
+      card?.setAttribute("aria-pressed", String(isActive));
     });
 
     projectCurrent.textContent = String(activeProject + 1).padStart(
@@ -873,73 +782,122 @@ if (
     }, 120);
   };
 
+  const scrollToProject = (
+    index,
+    behavior = reducedMotion ? "auto" : "smooth",
+  ) => {
+    const boundedIndex = Math.max(
+      0,
+      Math.min(projectSlides.length - 1, index),
+    );
+    const slide = projectSlides[boundedIndex];
+    const targetLeft =
+      slide.offsetLeft -
+      (albumStage.clientWidth - slide.offsetWidth) / 2;
+
+    albumStage.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior,
+    });
+  };
+
+  const updateAlbumState = () => {
+    setActiveProject(getClosestProject());
+    albumScrollTicking = false;
+  };
+
+  const syncAlbumGeometry = () => {
+    const slideWidth =
+      projectSlides[0]?.getBoundingClientRect().width ?? 0;
+    const gutter = Math.max(
+      0,
+      (albumStage.clientWidth - slideWidth) / 2,
+    );
+    albumTrack.style.setProperty(
+      "--album-gutter",
+      `${gutter.toFixed(2)}px`,
+    );
+  };
+
   projectSlides.forEach((slide, index) => {
-    slide.addEventListener("click", () => selectProject(index));
+    slide.querySelector(".album-card")?.addEventListener("click", () => {
+      scrollToProject(index);
+    });
   });
 
   albumSwitcher.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      selectProject(activeProject - 1);
+      scrollToProject(activeProject - 1);
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      selectProject(activeProject + 1);
+      scrollToProject(activeProject + 1);
     }
   });
 
-  const endProjectDrag = (event) => {
-    if (dragPointerId === null) return;
+  albumStage.addEventListener(
+    "scroll",
+    () => {
+      if (albumScrollTicking) return;
+      albumScrollTicking = true;
+      window.requestAnimationFrame(updateAlbumState);
+    },
+    { passive: true },
+  );
 
-    if (albumStage.hasPointerCapture(dragPointerId)) {
-      albumStage.releasePointerCapture(dragPointerId);
+  const finishProjectDrag = () => {
+    if (!dragState) return;
+
+    if (albumStage.hasPointerCapture(dragState.pointerId)) {
+      albumStage.releasePointerCapture(dragState.pointerId);
     }
 
-    const travelled = pointerDeltaX;
-    pointerDeltaX = 0;
-    dragPointerId = null;
-    albumStage.style.setProperty("--album-drag", "0px");
+    const wasDragged = dragState.dragged;
+    dragState = null;
     albumSwitcher.classList.remove("is-dragging");
 
-    if (Math.abs(travelled) > 48) {
-      suppressProjectClick = true;
-      selectProject(activeProject + (travelled < 0 ? 1 : -1));
-    }
+    if (!wasDragged) return;
+    suppressProjectClick = true;
+    scrollToProject(getClosestProject());
+    window.setTimeout(() => {
+      suppressProjectClick = false;
+    }, 0);
   };
 
   albumStage.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    pointerStartX = event.clientX;
-    pointerStartY = event.clientY;
-    pointerDeltaX = 0;
-    dragPointerId = event.pointerId;
+    if (event.button !== 0 || event.pointerType === "touch") return;
+    dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: albumStage.scrollLeft,
+      dragged: false,
+    };
     albumStage.setPointerCapture(event.pointerId);
   });
 
   albumStage.addEventListener(
     "pointermove",
     (event) => {
-      if (event.pointerId !== dragPointerId) return;
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
 
-      const deltaX = event.clientX - pointerStartX;
-      const deltaY = event.clientY - pointerStartY;
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
       if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
       if (Math.abs(deltaY) > Math.abs(deltaX)) return;
 
-      pointerDeltaX = Math.max(-160, Math.min(160, deltaX));
+      dragState.dragged = true;
       albumSwitcher.classList.add("is-dragging");
-      albumStage.style.setProperty(
-        "--album-drag",
-        `${pointerDeltaX.toFixed(1)}px`,
-      );
+      albumStage.scrollLeft = dragState.startScrollLeft - deltaX;
       event.preventDefault();
     },
     { passive: false },
   );
 
-  albumStage.addEventListener("pointerup", endProjectDrag);
-  albumStage.addEventListener("pointercancel", endProjectDrag);
+  albumStage.addEventListener("pointerup", finishProjectDrag);
+  albumStage.addEventListener("pointercancel", finishProjectDrag);
   albumStage.addEventListener(
     "click",
     (event) => {
@@ -951,7 +909,18 @@ if (
     { capture: true },
   );
 
-  selectProject(0, false);
+  syncAlbumGeometry();
+  scrollToProject(0, "auto");
+  setActiveProject(0, false);
+
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(() => {
+      syncAlbumGeometry();
+      if (activeProject >= 0) {
+        scrollToProject(activeProject, "auto");
+      }
+    }).observe(albumStage);
+  }
 }
 
 if (reducedMotion || !("IntersectionObserver" in window)) {
