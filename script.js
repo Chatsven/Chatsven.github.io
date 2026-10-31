@@ -657,7 +657,6 @@ if (hero && heroTitle) {
 
 const albumSwitcher = document.querySelector("[data-album-switcher]");
 const albumStage = document.querySelector("[data-album-stage]");
-const albumTrack = document.querySelector("[data-album-track]");
 const projectSlides = [
   ...document.querySelectorAll("[data-project-slide]"),
 ];
@@ -719,7 +718,6 @@ const projects = [
 if (
   albumSwitcher &&
   albumStage &&
-  albumTrack &&
   projectSlides.length === projects.length &&
   projectMeta &&
   projectCurrent &&
@@ -736,6 +734,46 @@ if (
 
   projectTotal.textContent = String(projects.length).padStart(2, "0");
 
+  const cloneProjectSlide = (source, projectIndex, setIndex) => {
+    const clone = source.cloneNode(true);
+    clone.dataset.projectIndex = String(projectIndex);
+    clone.dataset.projectSet = String(setIndex);
+    const card = clone.querySelector(".album-card");
+    card?.setAttribute("aria-hidden", "true");
+    card?.setAttribute("aria-pressed", "false");
+    if (card) card.tabIndex = -1;
+    return clone;
+  };
+
+  projectSlides.forEach((slide, projectIndex) => {
+    slide.dataset.projectSet = "0";
+    slide.querySelector(".album-card")?.setAttribute(
+      "data-project-index",
+      String(projectIndex),
+    );
+  });
+
+  for (let setIndex = 1; setIndex <= 2; setIndex += 1) {
+    const projectSet = document.createDocumentFragment();
+    projectSlides.forEach((slide, projectIndex) => {
+      projectSet.append(
+        cloneProjectSlide(slide, projectIndex, setIndex),
+      );
+    });
+    albumStage.querySelector(".swiper-wrapper").append(projectSet);
+  }
+
+  const carouselSlides = [
+    ...albumStage.querySelectorAll("[data-project-slide]"),
+  ];
+  carouselSlides
+    .slice(projects.length, projects.length * 2)
+    .forEach((slide) => {
+      const card = slide.querySelector(".album-card");
+      card?.removeAttribute("aria-hidden");
+      if (card) card.tabIndex = 0;
+    });
+
   const renderProjectMeta = (index) => {
     const project = projects[index];
     projectCurrent.textContent = String(index + 1).padStart(2, "0");
@@ -749,9 +787,9 @@ if (
         return element;
       }),
     );
-    projectLink.href = project.href;
     projectLink.hidden = Boolean(project.placeholder);
-    projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
+    projectLink.href = project.href || "#work";
+    projectLink.setAttribute("aria-label", "查看作品：" + project.title);
   };
 
   const updateProjectMeta = (index, animate = true) => {
@@ -770,89 +808,65 @@ if (
     projectMetaTimer = window.setTimeout(() => {
       renderProjectMeta(index);
       projectMeta.classList.remove("is-refreshing");
-    }, 120);
+    }, 110);
   };
 
-  updateProjectMeta(0, false);
-
-  const cloneProjectSlide = (source, projectIndex, setIndex) => {
-    const clone = source.cloneNode(true);
-    clone.dataset.projectIndex = String(projectIndex);
-    clone.dataset.projectSet = String(setIndex);
-    const card = clone.querySelector(".album-card");
-    card?.setAttribute("aria-hidden", "true");
-    if (card) card.tabIndex = -1;
-    return clone;
-  };
-
-  projectSlides.forEach((slide) => {
-    slide.dataset.projectSet = "0";
-    const card = slide.querySelector(".album-card");
-    card?.setAttribute("aria-hidden", "true");
-    if (card) card.tabIndex = -1;
-  });
-
-  for (let setIndex = 1; setIndex <= 2; setIndex += 1) {
-    const projectSet = document.createDocumentFragment();
-    projectSlides.forEach((slide, projectIndex) => {
-      projectSet.append(
-        cloneProjectSlide(slide, projectIndex, setIndex),
-      );
-    });
-    albumTrack.append(projectSet);
-  }
-
-  const allSlides = [...albumTrack.querySelectorAll("[data-project-slide]")];
-  allSlides
-    .slice(projects.length, projects.length * 2)
-    .forEach((slide) => {
+  const syncActiveCard = (swiper) => {
+    const activeSlide = swiper.slides[swiper.activeIndex];
+    swiper.slides.forEach((slide) => {
+      const isActive = slide === activeSlide;
       const card = slide.querySelector(".album-card");
-      card?.removeAttribute("aria-hidden");
-      if (card) card.tabIndex = 0;
+      card?.classList.toggle("is-active", isActive);
+      card?.setAttribute("aria-pressed", String(isActive));
+      card?.setAttribute("aria-hidden", String(!isActive));
+      if (card) card.tabIndex = isActive ? 0 : -1;
     });
+  };
 
   const coverflow = new Swiper(albumStage, {
     effect: "coverflow",
     grabCursor: true,
     centeredSlides: true,
     slidesPerView: "auto",
+    loop: true,
     initialSlide: projects.length,
-    loop: false,
-    speed: 650,
+    loopAdditionalSlides: 2,
+    speed: 620,
     watchSlidesProgress: true,
-    threshold: 5,
+    threshold: 6,
+    resistanceRatio: 0.68,
+    longSwipesRatio: 0.25,
+    touchStartPreventDefault: false,
     coverflowEffect: {
       rotate: 50,
       stretch: 0,
-      depth: 100,
+      depth: 110,
       modifier: 1,
-      slideShadows: true,
-    },
-    keyboard: {
-      enabled: true,
-      onlyInViewport: true,
+      slideShadows: false,
     },
     mousewheel: {
       forceToAxis: true,
       releaseOnEdges: false,
-      sensitivity: 0.9,
+      sensitivity: 0.8,
       thresholdDelta: 8,
+      thresholdTime: 320,
+    },
+    a11y: {
+      enabled: true,
+      prevSlideMessage: "上一件作品",
+      nextSlideMessage: "下一件作品",
     },
     on: {
       init(swiper) {
-        swiper.slideTo(projects.length, 0, false);
-        updateProjectMeta(0, false);
+        const slide = swiper.slides[swiper.activeIndex];
+        activeProject = Number(slide.dataset.projectIndex);
+        renderProjectMeta(activeProject);
+        syncActiveCard(swiper);
       },
       slideChange(swiper) {
         const slide = swiper.slides[swiper.activeIndex];
         updateProjectMeta(Number(slide.dataset.projectIndex));
-      },
-      transitionEnd(swiper) {
-        const slide = swiper.slides[swiper.activeIndex];
-        if (Number(slide.dataset.projectSet) === 1) return;
-        const middleIndex =
-          projects.length + Number(slide.dataset.projectIndex);
-        swiper.slideTo(middleIndex, 0, false);
+        syncActiveCard(swiper);
       },
     },
   });
@@ -860,13 +874,24 @@ if (
   albumStage.addEventListener("click", (event) => {
     const card = event.target.closest(".album-card");
     const slide = card?.closest("[data-project-slide]");
-    if (!slide) return;
-    coverflow.slideTo(coverflow.slides.indexOf(slide));
+    if (!slide || slide.classList.contains("swiper-slide-active")) return;
+    coverflow.slideToLoop(Number(slide.dataset.projectIndex));
+  });
+
+  albumSwitcher.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      coverflow.slidePrev();
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      coverflow.slideNext();
+    }
   });
 
   albumSwitcher.dataset.swiperReady = "true";
 }
-
 
 if (reducedMotion || !("IntersectionObserver" in window)) {
   document.querySelectorAll(".reveal").forEach((element) => {
