@@ -802,6 +802,37 @@ if (
     projectLink.setAttribute("aria-label", `查看作品：${project.title}`);
   };
 
+  const updateCardTransforms = () => {
+    const stageCenter =
+      albumStage.scrollLeft + albumStage.clientWidth / 2;
+    const step = carouselSlides[0]?.offsetWidth || 1;
+
+    carouselSlides.forEach((slide) => {
+      const card = slide.querySelector(".album-card");
+      if (!card) return;
+
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const offset = (slideCenter - stageCenter) / step;
+      const distance = Math.min(2.5, Math.abs(offset));
+      const rotate = Math.max(-50, Math.min(50, offset * -42));
+      const scale = Math.max(0.49, 1 - distance * 0.25);
+      const opacity = Math.max(0.3, 1 - distance * 0.3);
+      const blur = Math.min(1.5, distance * 0.78);
+      const saturate = Math.max(0.55, 1 - distance * 0.26);
+      const depth = -Math.min(125, distance * 62);
+
+      card.style.setProperty("--album-rotate", `${rotate.toFixed(2)}deg`);
+      card.style.setProperty("--album-scale", scale.toFixed(3));
+      card.style.setProperty("--album-opacity", opacity.toFixed(3));
+      card.style.setProperty("--album-blur", `${blur.toFixed(2)}px`);
+      card.style.setProperty("--album-saturate", saturate.toFixed(3));
+      card.style.setProperty("--album-depth", `${depth.toFixed(1)}px`);
+      slide.style.zIndex = String(
+        Math.max(1, 20 - Math.round(distance * 5)),
+      );
+    });
+  };
+
   const getClosestSlide = () => {
     const stageCenter =
       albumStage.scrollLeft + albumStage.clientWidth / 2;
@@ -900,11 +931,13 @@ if (
     albumStage.scrollLeft += rebaseOffset;
     setActiveProject(targetSlide, false);
     window.requestAnimationFrame(() => {
+      updateCardTransforms();
       albumSwitcher.classList.remove("is-rebasing");
     });
   };
 
   const updateAlbumState = () => {
+    updateCardTransforms();
     setActiveProject(getClosestSlide());
     window.clearTimeout(albumSettleTimer);
     if (!albumSwitcher.classList.contains("is-dragging")) {
@@ -1020,6 +1053,7 @@ if (
   const initialSlide = carouselSlides[projects.length];
   scrollToSlide(initialSlide, "auto");
   setActiveProject(initialSlide, false);
+  updateCardTransforms();
 
   if ("ResizeObserver" in window) {
     new ResizeObserver(() => {
@@ -1027,6 +1061,7 @@ if (
       if (activeProject >= 0) {
         scrollToSlide(currentSlide, "auto");
       }
+      updateCardTransforms();
     }).observe(albumStage);
   }
 }
