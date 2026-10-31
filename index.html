@@ -27,7 +27,11 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link rel="stylesheet" href="styles.css?v=35" />
+    <link
+      rel="stylesheet"
+      href="assets/vendor/swiper-bundle.min.css"
+    />
+    <link rel="stylesheet" href="styles.css?v=37" />
     <noscript>
       <style>
         .reveal {
@@ -234,18 +238,17 @@
             aria-roledescription="carousel"
             aria-label="精选作品相册"
           >
-            <div class="album-stage" data-album-stage>
-              <div class="album-track" data-album-track>
+            <div class="album-stage swiper" data-album-stage>
+              <div class="album-track swiper-wrapper" data-album-track>
                 <div
-                  class="album-slide"
+                  class="album-slide swiper-slide"
                   data-project-slide
                   data-project-index="0"
                 >
                   <button
-                    class="album-card album-card-citizen is-active"
+                    class="album-card album-card-citizen"
                     type="button"
                     aria-label="查看作品：Citizen Userscript for Wikimedia"
-                    aria-pressed="true"
                   >
                     <img
                       src="assets/citizen-preview.jpg"
@@ -258,7 +261,7 @@
                 </div>
 
                 <div
-                  class="album-slide"
+                  class="album-slide swiper-slide"
                   data-project-slide
                   data-project-index="1"
                 >
@@ -266,7 +269,6 @@
                     class="album-card album-card-site"
                     type="button"
                     aria-label="查看作品：澪空の自介站"
-                    aria-pressed="false"
                   >
                     <span
                       class="album-cover-orbit"
@@ -287,7 +289,7 @@
                 </div>
 
                 <div
-                  class="album-slide"
+                  class="album-slide swiper-slide"
                   data-project-slide
                   data-project-index="2"
                 >
@@ -295,7 +297,6 @@
                     class="album-card album-card-archive"
                     type="button"
                     aria-label="查看作品：更多开源项目"
-                    aria-pressed="false"
                   >
                     <span
                       class="album-archive-grid"
@@ -316,7 +317,7 @@
                 </div>
 
                 <div
-                  class="album-slide"
+                  class="album-slide swiper-slide"
                   data-project-slide
                   data-project-index="3"
                 >
@@ -324,7 +325,6 @@
                     class="album-card album-card-placeholder"
                     type="button"
                     aria-label="查看预留作品位 04"
-                    aria-pressed="false"
                   >
                     <span
                       class="album-placeholder-mark"
@@ -338,7 +338,7 @@
                 </div>
 
                 <div
-                  class="album-slide"
+                  class="album-slide swiper-slide"
                   data-project-slide
                   data-project-index="4"
                 >
@@ -346,7 +346,6 @@
                     class="album-card album-card-placeholder"
                     type="button"
                     aria-label="查看预留作品位 05"
-                    aria-pressed="false"
                   >
                     <span
                       class="album-placeholder-mark"
@@ -450,6 +449,7 @@
       </div>
     </footer>
 
-    <script src="script.js?v=39"></script>
+    <script src="assets/vendor/swiper-bundle.min.js"></script>
+    <script src="script.js?v=41"></script>
   </body>
 </html>

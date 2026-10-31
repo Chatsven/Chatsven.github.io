@@ -1033,7 +1033,8 @@ h1 {
   display: flex;
   flex: 1;
   flex-direction: column;
-  width: 100%;
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
   min-height: 0;
   outline: none;
 }
@@ -1042,7 +1043,9 @@ h1 {
   outline: none;
 }
 
-.album-switcher:focus-visible .album-card.is-active {
+.album-switcher:focus-visible
+  .swiper-slide-active
+  .album-card {
   outline: 2px solid rgba(6, 31, 44, 0.58);
   outline-offset: 0.35rem;
 }
@@ -1053,76 +1056,47 @@ h1 {
   width: 100%;
   min-height: clamp(22rem, 55svh, 36rem);
   margin: clamp(0.5rem, 1.5vh, 1rem) auto;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-inline: contain;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+  overflow: hidden;
   cursor: grab;
-  perspective: 90rem;
-  touch-action: pan-x pan-y;
-}
-
-.album-stage::-webkit-scrollbar {
-  display: none;
-}
-
-.album-switcher.is-dragging .album-stage,
-.album-switcher.is-rebasing .album-stage {
-  scroll-snap-type: none;
-}
-
-.album-switcher.is-rebasing .album-stage {
-  scroll-behavior: auto;
-}
-
-.album-switcher.is-dragging .album-stage {
-  cursor: grabbing;
 }
 
 .album-track {
   position: relative;
   display: flex;
-  box-sizing: border-box;
   align-items: center;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
 }
 
-.album-track::before,
-.album-track::after {
-  flex: 0 0 var(--album-gutter, 0px);
-  height: 1px;
-  content: "";
-}
-
 .album-slide {
   position: relative;
-  z-index: 1;
   flex: 0 0 var(--album-step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--album-step);
   height: 100%;
-  scroll-snap-align: center;
   transform-style: preserve-3d;
+  opacity: 0.64;
+  filter: blur(0.9px) saturate(0.72);
+  transition:
+    opacity 280ms ease,
+    filter 280ms ease;
 }
 
-.album-slide.is-active {
+.album-slide.swiper-slide-active {
   z-index: 3;
+  opacity: 1;
+  filter: none;
 }
 
 .album-card {
-  --album-blur: 0px;
-  --album-depth: 0px;
-  --album-opacity: 1;
-  --album-rotate: 0deg;
-  --album-saturate: 1;
-  --album-scale: 1;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 var(--album-card-width);
   width: var(--album-card-width);
+  max-width: none;
   aspect-ratio: 1.78;
   padding: 0;
   overflow: hidden;
@@ -1134,31 +1108,13 @@ h1 {
     0 1rem 2rem rgba(20, 81, 102, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  opacity: var(--album-opacity);
-  transform: translate(-50%, -50%) translateZ(var(--album-depth))
-    rotateY(var(--album-rotate)) scale(var(--album-scale));
-  transition:
-    opacity 90ms linear,
-    filter 90ms linear,
-    box-shadow 280ms ease;
-  filter: blur(var(--album-blur)) saturate(var(--album-saturate));
-  transform-origin: center;
+  transform: none;
 }
 
-.album-card.is-active {
-  z-index: 2;
-  cursor: default;
+.swiper-slide-active .album-card {
   box-shadow:
     0 1.5rem 3rem rgba(20, 81, 102, 0.13),
     0 0 0 1px rgba(255, 255, 255, 0.86);
-}
-
-.album-switcher.is-dragging .album-card,
-.album-switcher.is-rebasing .album-card {
-  transition:
-    opacity 0ms linear,
-    filter 0ms linear,
-    box-shadow 0ms linear;
 }
 
 .album-card:focus-visible {
