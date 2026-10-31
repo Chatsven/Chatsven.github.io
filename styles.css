@@ -1028,8 +1028,8 @@ h1 {
 }
 
 .album-switcher {
-  --album-card-width: min(52vw, 45rem, 68svh);
-  --album-step: min(28vw, 24rem);
+  --album-card-width: min(48vw, 42rem, 62svh);
+  --album-step: min(27vw, 23rem);
   flex: 1;
   width: 100vw;
   margin-inline: calc(50% - 50vw);
@@ -1051,7 +1051,7 @@ h1 {
 .album-stage {
   position: relative;
   width: 100%;
-  min-height: clamp(22rem, 55svh, 36rem);
+  min-height: clamp(20rem, 50svh, 32rem);
   margin: clamp(0.5rem, 1.5vh, 1rem) auto;
   overflow: hidden;
   cursor: grab;
@@ -1085,7 +1085,7 @@ h1 {
   z-index: 1;
   flex: 0 0 var(--album-card-width);
   width: var(--album-card-width);
-  aspect-ratio: 1.78;
+  aspect-ratio: 1.6;
   padding: 0;
   overflow: hidden;
   color: var(--ink);
@@ -1127,8 +1127,9 @@ h1 {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 50% 12%;
+  object-fit: contain;
+  object-position: 50% 50%;
+  background: #eef5f7;
 }
 
 .album-card-site {
@@ -1613,15 +1614,15 @@ h1 {
   }
 
   .album-switcher {
-    --album-card-width: min(72vw, 38rem);
-    --album-step: min(42vw, 20rem);
+    --album-card-width: min(68vw, 35rem);
+    --album-step: min(39vw, 19rem);
     flex: none;
     margin-top: clamp(1rem, 3vw, 2rem);
   }
 
   .album-stage {
     flex: none;
-    height: clamp(22rem, 58vw, 28rem);
+    height: clamp(20rem, 54vw, 26rem);
     min-height: 0;
     max-height: none;
     margin: 0 auto;
@@ -1629,7 +1630,7 @@ h1 {
 
   .album-card {
     width: var(--album-card-width);
-    aspect-ratio: 1.7;
+    aspect-ratio: 1.6;
     border-radius: clamp(2rem, 5vw, 3rem);
   }
 
@@ -1771,18 +1772,18 @@ h1 {
   }
 
   .album-switcher {
-    --album-card-width: 82vw;
-    --album-step: 52vw;
+    --album-card-width: 78vw;
+    --album-step: 49vw;
     margin-top: 1.5rem;
   }
 
   .album-stage {
-    height: 18.5rem;
+    height: 19rem;
   }
 
   .album-card {
     width: var(--album-card-width);
-    aspect-ratio: 1.55;
+    aspect-ratio: 1.58;
     border-radius: 2rem;
   }
 
