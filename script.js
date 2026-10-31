@@ -47,6 +47,10 @@ document.documentElement.dataset.motion = reducedMotion
 const anchorLinks = [...document.querySelectorAll('a[href^="#"]')];
 const anchorOffset = 88;
 let anchorAnimationFrame = 0;
+let wheelAnimationFrame = 0;
+let wheelPositionY = window.scrollY;
+let wheelTargetY = window.scrollY;
+let wheelLastFrameTime = 0;
 
 const resolveAnchorElement = (target) =>
   target.querySelector(".section-heading") ?? target;
@@ -71,8 +75,15 @@ const cancelAnchorAnimation = () => {
   anchorAnimationFrame = 0;
 };
 
+const cancelWheelDamping = () => {
+  if (!wheelAnimationFrame) return;
+  window.cancelAnimationFrame(wheelAnimationFrame);
+  wheelAnimationFrame = 0;
+};
+
 const dampedScrollToY = (requestedTargetY) => {
   cancelAnchorAnimation();
+  cancelWheelDamping();
 
   const maxScrollY = Math.max(
     0,
@@ -154,15 +165,19 @@ anchorLinks.forEach((link) => {
 });
 
 window.addEventListener(
-  "wheel",
-  cancelAnchorAnimation,
-  { passive: true },
-);
-window.addEventListener(
   "touchstart",
-  cancelAnchorAnimation,
+  () => {
+    cancelAnchorAnimation();
+    cancelWheelDamping();
+  },
   { passive: true },
 );
+window.addEventListener("pointerdown", cancelWheelDamping, {
+  passive: true,
+});
+window.addEventListener("keydown", cancelWheelDamping, {
+  passive: true,
+});
 
 const initialAnchor = location.hash.length > 1
   ? document.querySelector(location.hash)
@@ -171,6 +186,90 @@ const initialAnchor = location.hash.length > 1
 if (initialAnchor) {
   window.requestAnimationFrame(() => dampedScrollTo(initialAnchor));
 }
+
+const maxWheelScrollY = () =>
+  Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+const dampWheelStep = (time) => {
+  const delta = Math.min(
+    Math.max((time - wheelLastFrameTime) / 1000, 0),
+    1 / 30,
+  );
+  wheelLastFrameTime = time;
+  const target = Math.min(maxWheelScrollY(), Math.max(0, wheelTargetY));
+  const easing = reducedMotion ? 1 : 1 - Math.exp(-18 * delta);
+  wheelPositionY += (target - wheelPositionY) * easing;
+
+  if (Math.abs(target - wheelPositionY) < 0.35) {
+    wheelPositionY = target;
+    window.scrollTo(0, target);
+    wheelAnimationFrame = 0;
+    return;
+  }
+
+  window.scrollTo(0, wheelPositionY);
+  wheelAnimationFrame = window.requestAnimationFrame(dampWheelStep);
+};
+
+window.addEventListener(
+  "wheel",
+  (event) => {
+    cancelAnchorAnimation();
+
+    if (
+      reducedMotion ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      Math.abs(event.deltaX) > Math.abs(event.deltaY)
+    ) {
+      cancelWheelDamping();
+      return;
+    }
+
+    const multiplier =
+      event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? 16
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? window.innerHeight
+          : 1;
+    const delta = Math.max(
+      -1200,
+      Math.min(1200, event.deltaY * multiplier),
+    );
+    if (!delta) return;
+
+    const currentY = window.scrollY;
+    const maximumY = maxWheelScrollY();
+    if (
+      (!wheelAnimationFrame && Math.abs(currentY - wheelPositionY) > 2) ||
+      (currentY <= 0 && delta < 0) ||
+      (currentY >= maximumY && delta > 0)
+    ) {
+      wheelPositionY = currentY;
+      wheelTargetY = currentY;
+    }
+
+    if (
+      (currentY <= 0 && delta < 0) ||
+      (currentY >= maximumY && delta > 0)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    wheelTargetY = Math.min(
+      maximumY,
+      Math.max(0, wheelTargetY + delta),
+    );
+
+    if (!wheelAnimationFrame) {
+      wheelPositionY = currentY;
+      wheelLastFrameTime = performance.now();
+      wheelAnimationFrame = window.requestAnimationFrame(dampWheelStep);
+    }
+  },
+  { passive: false },
+);
 
 const hero = document.querySelector(".hero");
 const gridCanvas = document.querySelector(".hero-grid-canvas");
@@ -669,8 +768,6 @@ const projectDescription = document.querySelector(
 );
 const projectTags = document.querySelector("[data-project-tags]");
 const projectLink = document.querySelector("[data-project-link]");
-const projectPrev = document.querySelector("[data-project-prev]");
-const projectNext = document.querySelector("[data-project-next]");
 const projects = [
   {
     type: "USERSCRIPT · JAVASCRIPT",
@@ -778,14 +875,6 @@ if (
 
   projectSlides.forEach((slide, index) => {
     slide.addEventListener("click", () => selectProject(index));
-  });
-
-  projectPrev?.addEventListener("click", () => {
-    selectProject(activeProject - 1);
-  });
-
-  projectNext?.addEventListener("click", () => {
-    selectProject(activeProject + 1);
   });
 
   albumSwitcher.addEventListener("keydown", (event) => {
