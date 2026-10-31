@@ -1056,6 +1056,7 @@ h1 {
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   cursor: grab;
@@ -1066,8 +1067,16 @@ h1 {
   display: none;
 }
 
-.album-switcher.is-dragging .album-stage {
+.album-switcher.is-dragging .album-stage,
+.album-switcher.is-rebasing .album-stage {
   scroll-snap-type: none;
+}
+
+.album-switcher.is-rebasing .album-stage {
+  scroll-behavior: auto;
+}
+
+.album-switcher.is-dragging .album-stage {
   cursor: grabbing;
 }
 
@@ -1093,7 +1102,6 @@ h1 {
   flex: 0 0 var(--album-step);
   height: 100%;
   scroll-snap-align: center;
-  scroll-snap-stop: always;
 }
 
 .album-slide.is-active {
@@ -1121,10 +1129,10 @@ h1 {
   opacity: var(--album-opacity);
   transform: translate(-50%, -50%) scale(0.72);
   transition:
-    transform 760ms cubic-bezier(0.18, 0.78, 0.2, 1),
-    opacity 520ms ease,
-    filter 520ms ease,
-    box-shadow 520ms ease;
+    transform 460ms cubic-bezier(0.18, 0.78, 0.2, 1),
+    opacity 360ms ease,
+    filter 360ms ease,
+    box-shadow 360ms ease;
   filter: blur(0.9px) saturate(0.72);
 }
 
@@ -1139,7 +1147,8 @@ h1 {
     0 0 0 1px rgba(255, 255, 255, 0.86);
 }
 
-.album-switcher.is-dragging .album-card {
+.album-switcher.is-dragging .album-card,
+.album-switcher.is-rebasing .album-card {
   transition: none;
 }
 

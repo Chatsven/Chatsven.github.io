@@ -730,10 +730,10 @@ if (
   projectTags &&
   projectLink
 ) {
-  const cloneProjectSlide = (source, projectIndex, position) => {
+  const cloneProjectSlide = (source, projectIndex, setIndex) => {
     const clone = source.cloneNode(true);
     clone.dataset.projectIndex = String(projectIndex);
-    clone.dataset.projectClone = position;
+    clone.dataset.projectSet = String(setIndex);
     clone.classList.remove("is-active");
     clone.querySelectorAll(".is-active").forEach((element) => {
       element.classList.remove("is-active");
@@ -744,27 +744,35 @@ if (
     if (cloneCard) cloneCard.tabIndex = -1;
     return clone;
   };
-  const firstProjectSlide = projectSlides[0];
-  const lastProjectSlide = projectSlides[projectSlides.length - 1];
-  albumTrack.prepend(
-    cloneProjectSlide(
-      projectSlides[projectSlides.length - 2],
-      projects.length - 2,
-      "leading-outer",
-    ),
-    cloneProjectSlide(
-      lastProjectSlide,
-      projects.length - 1,
-      "leading",
-    ),
-  );
-  albumTrack.append(
-    cloneProjectSlide(firstProjectSlide, 0, "trailing"),
-    cloneProjectSlide(projectSlides[1], 1, "trailing-outer"),
-  );
+  projectSlides.forEach((slide) => {
+    slide.dataset.projectSet = "0";
+    const originalCard = slide.querySelector(".album-card");
+    originalCard?.setAttribute("aria-hidden", "true");
+    if (originalCard) originalCard.tabIndex = -1;
+  });
+
+  for (let setIndex = 1; setIndex <= 2; setIndex += 1) {
+    const projectSet = document.createDocumentFragment();
+    projectSlides.forEach((slide, projectIndex) => {
+      projectSet.append(
+        cloneProjectSlide(slide, projectIndex, setIndex),
+      );
+    });
+    albumTrack.append(projectSet);
+  }
+
   const carouselSlides = [
     ...albumTrack.querySelectorAll("[data-project-slide]"),
   ];
+  const middleSetSlides = carouselSlides.slice(
+    projects.length,
+    projects.length * 2,
+  );
+  middleSetSlides.forEach((slide) => {
+    const card = slide.querySelector(".album-card");
+    card?.removeAttribute("aria-hidden");
+    if (card) card.tabIndex = 0;
+  });
 
   let activeProject = -1;
   let currentSlide = null;
@@ -862,10 +870,6 @@ if (
     });
   };
 
-  const scrollToProject = (index) => {
-    scrollToSlide(projectSlides[index]);
-  };
-
   const stepProject = (direction) => {
     const currentIndex = Math.max(
       0,
@@ -883,15 +887,21 @@ if (
 
   const settleProject = () => {
     const closestSlide = getClosestSlide();
-    if (!closestSlide.dataset.projectClone) {
+    const setIndex = Number(closestSlide.dataset.projectSet);
+    if (setIndex === 1) {
       setActiveProject(closestSlide);
       return;
     }
 
-    const targetSlide =
-      projectSlides[Number(closestSlide.dataset.projectIndex)];
-    scrollToSlide(targetSlide, "auto");
+    const projectIndex = Number(closestSlide.dataset.projectIndex);
+    const targetSlide = carouselSlides[projects.length + projectIndex];
+    const rebaseOffset = targetSlide.offsetLeft - closestSlide.offsetLeft;
+    albumSwitcher.classList.add("is-rebasing");
+    albumStage.scrollLeft += rebaseOffset;
     setActiveProject(targetSlide, false);
+    window.requestAnimationFrame(() => {
+      albumSwitcher.classList.remove("is-rebasing");
+    });
   };
 
   const updateAlbumState = () => {
@@ -916,9 +926,9 @@ if (
     );
   };
 
-  projectSlides.forEach((slide, index) => {
+  carouselSlides.forEach((slide) => {
     slide.querySelector(".album-card")?.addEventListener("click", () => {
-      scrollToProject(index);
+      scrollToSlide(slide);
     });
   });
 
@@ -1007,8 +1017,9 @@ if (
   );
 
   syncAlbumGeometry();
-  scrollToSlide(projectSlides[0], "auto");
-  setActiveProject(projectSlides[0], false);
+  const initialSlide = carouselSlides[projects.length];
+  scrollToSlide(initialSlide, "auto");
+  setActiveProject(initialSlide, false);
 
   if ("ResizeObserver" in window) {
     new ResizeObserver(() => {
