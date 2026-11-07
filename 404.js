@@ -95,6 +95,14 @@ addPath([26, 27, 28, 29], [
 addPath([30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
 addPath([41, 42, 43]);
 
+const initialPaths = paths.map((path) =>
+  path.map((edge) => ({
+    ...edge,
+    h1: { ...edge.h1 },
+    h2: { ...edge.h2 },
+  })),
+);
+
 const selectedIndices = new Set();
 let hoveredIndex = null;
 let activeHandle = null;
@@ -237,6 +245,88 @@ const draw = () => {
       context.stroke();
     }
   }
+};
+
+const deleteSelectedAnchors = () => {
+  if (selectedIndices.size === 0) return;
+
+  const nextAnchors = [];
+  const remappedIndices = new Map();
+
+  anchors.forEach((anchor, index) => {
+    if (selectedIndices.has(index)) return;
+    remappedIndices.set(index, nextAnchors.length);
+    nextAnchors.push(anchor);
+  });
+
+  const nextPaths = [];
+
+  paths.forEach((path) => {
+    const vertexIndices = path.map((edge) => edge.startIndex);
+    const remainingPositions = [];
+
+    vertexIndices.forEach((index, position) => {
+      if (!selectedIndices.has(index)) remainingPositions.push(position);
+    });
+
+    if (remainingPositions.length < 2) return;
+
+    const nextEdges = remainingPositions.map((position, index) => {
+      const nextPosition =
+        remainingPositions[(index + 1) % remainingPositions.length];
+      const startIndex = vertexIndices[position];
+      const endIndex = vertexIndices[nextPosition];
+      const isDirectNeighbor =
+        nextPosition === (position + 1) % vertexIndices.length;
+      const startEdge = path[position];
+      const endEdge = isDirectNeighbor
+        ? path[nextPosition]
+        : path[
+            (nextPosition - 1 + vertexIndices.length) %
+              vertexIndices.length
+          ];
+
+      return {
+        startIndex: remappedIndices.get(startIndex),
+        endIndex: remappedIndices.get(endIndex),
+        h1: { ...startEdge.h1 },
+        h2: { ...endEdge.h2 },
+      };
+    });
+
+    nextPaths.push(nextEdges);
+  });
+
+  anchors = nextAnchors;
+  paths.length = 0;
+  paths.push(...nextPaths);
+  selectedIndices.clear();
+  hoveredIndex = null;
+  activeHandle = null;
+  marquee = null;
+  dragState = null;
+  draw();
+};
+
+const resetArtwork = () => {
+  anchors = initialAnchors.map(([x, y]) => ({ x, y }));
+  paths.length = 0;
+  initialPaths.forEach((path) => {
+    paths.push(
+      path.map((edge) => ({
+        ...edge,
+        h1: { ...edge.h1 },
+        h2: { ...edge.h2 },
+      })),
+    );
+  });
+  selectedIndices.clear();
+  hoveredIndex = null;
+  activeHandle = null;
+  isPointerDown = false;
+  marquee = null;
+  dragState = null;
+  draw();
 };
 
 const findNearestAnchor = (point) => {
@@ -411,14 +501,23 @@ canvas.addEventListener("pointerleave", () => {
     draw();
   }
 });
-canvas.addEventListener("dblclick", () => {
-  anchors = initialAnchors.map(([x, y]) => ({ x, y }));
-  selectedIndices.clear();
-  hoveredIndex = null;
-  activeHandle = null;
-  marquee = null;
-  dragState = null;
-  draw();
+canvas.addEventListener("dblclick", resetArtwork);
+
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Delete" && event.key !== "Backspace") return;
+  if (selectedIndices.size === 0 || isPointerDown) return;
+
+  const target = event.target;
+  if (
+    target instanceof HTMLElement &&
+    (target.isContentEditable ||
+      target.matches("input, textarea, select"))
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  deleteSelectedAnchors();
 });
 
 window.addEventListener("resize", draw);
