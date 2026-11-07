@@ -95,10 +95,12 @@ addPath([26, 27, 28, 29], [
 addPath([30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
 addPath([41, 42, 43]);
 
-let selectedIndex = null;
+const selectedIndices = new Set();
 let hoveredIndex = null;
 let activeHandle = null;
 let isPointerDown = false;
+let marquee = null;
+let dragState = null;
 
 const toCanvasPoint = (event) => {
   const bounds = canvas.getBoundingClientRect();
@@ -118,14 +120,14 @@ const getControls = (edge) => {
 };
 
 const getVisibleHandles = () => {
-  if (selectedIndex === null) return [];
+  if (selectedIndices.size === 0) return [];
 
   return paths
     .flat()
     .filter(
       (edge) =>
-        edge.startIndex === selectedIndex ||
-        edge.endIndex === selectedIndex,
+        selectedIndices.has(edge.startIndex) ||
+        selectedIndices.has(edge.endIndex),
     )
     .flatMap((edge) => {
       const { c1, c2 } = getControls(edge);
@@ -196,7 +198,7 @@ const draw = () => {
   });
 
   anchors.forEach((point, index) => {
-    const isActive = index === selectedIndex;
+    const isActive = selectedIndices.has(index);
     const isHovered = index === hoveredIndex;
     const radius = isActive ? 5.4 : isHovered ? 4.7 : 3.25;
 
@@ -218,6 +220,23 @@ const draw = () => {
     context.lineWidth = 1.2;
     context.stroke();
   });
+
+  if (marquee) {
+    const x = Math.min(marquee.start.x, marquee.current.x);
+    const y = Math.min(marquee.start.y, marquee.current.y);
+    const width = Math.abs(marquee.current.x - marquee.start.x);
+    const height = Math.abs(marquee.current.y - marquee.start.y);
+
+    if (width > 0.5 || height > 0.5) {
+      context.beginPath();
+      context.rect(x, y, width, height);
+      context.fillStyle = "rgba(89, 213, 234, 0.14)";
+      context.fill();
+      context.strokeStyle = "#59d5ea";
+      context.lineWidth = 1;
+      context.stroke();
+    }
+  }
 };
 
 const findNearestAnchor = (point) => {
@@ -256,8 +275,28 @@ const findNearestHandle = (point) => {
 canvas.addEventListener("pointermove", (event) => {
   const point = toCanvasPoint(event);
 
-  if (isPointerDown && selectedIndex !== null) {
-    if (activeHandle) {
+  if (isPointerDown) {
+    if (marquee) {
+      marquee.current = point;
+      selectedIndices.clear();
+      marquee.base.forEach((index) => selectedIndices.add(index));
+
+      const minX = Math.min(marquee.start.x, point.x);
+      const maxX = Math.max(marquee.start.x, point.x);
+      const minY = Math.min(marquee.start.y, point.y);
+      const maxY = Math.max(marquee.start.y, point.y);
+
+      anchors.forEach((anchor, index) => {
+        if (
+          anchor.x >= minX &&
+          anchor.x <= maxX &&
+          anchor.y >= minY &&
+          anchor.y <= maxY
+        ) {
+          selectedIndices.add(index);
+        }
+      });
+    } else if (activeHandle) {
       const anchor = anchors[activeHandle.edge[activeHandle.side]];
       const dx = point.x - anchor.x;
       const dy = point.y - anchor.y;
@@ -279,8 +318,13 @@ canvas.addEventListener("pointermove", (event) => {
           activeHandle.edge.h2 = { x: dx, y: dy };
         }
       }
-    } else {
-      anchors[selectedIndex] = point;
+    } else if (dragState) {
+      const dx = point.x - dragState.start.x;
+      const dy = point.y - dragState.start.y;
+
+      dragState.anchors.forEach(({ index, x, y }) => {
+        anchors[index] = { x: x + dx, y: y + dy };
+      });
     }
 
     draw();
@@ -288,31 +332,73 @@ canvas.addEventListener("pointermove", (event) => {
   }
 
   hoveredIndex = findNearestAnchor(point);
-  canvas.style.cursor = hoveredIndex === null ? "crosshair" : "grab";
+  const isOverHandle = findNearestHandle(point) !== null;
+  canvas.style.cursor =
+    hoveredIndex === null && !isOverHandle ? "crosshair" : "grab";
   draw();
 });
 
 canvas.addEventListener("pointerdown", (event) => {
   const point = toCanvasPoint(event);
-  const handle = findNearestHandle(point);
   const anchorIndex = findNearestAnchor(point);
+  const handle = anchorIndex === null ? findNearestHandle(point) : null;
 
-  if (handle) activeHandle = handle;
-  if (anchorIndex !== null) selectedIndex = anchorIndex;
-  if (!handle && anchorIndex === null) selectedIndex = null;
+  activeHandle = null;
+  dragState = null;
+  marquee = null;
 
-  isPointerDown = Boolean(handle || anchorIndex !== null);
-  if (isPointerDown) {
-    canvas.setPointerCapture(event.pointerId);
-    event.preventDefault();
-    draw();
+  if (handle) {
+    activeHandle = handle;
+  } else if (anchorIndex !== null) {
+    if (event.shiftKey && selectedIndices.has(anchorIndex)) {
+      selectedIndices.delete(anchorIndex);
+      isPointerDown = false;
+      draw();
+      return;
+    }
+
+    if (!event.shiftKey && !selectedIndices.has(anchorIndex)) {
+      selectedIndices.clear();
+    }
+
+    selectedIndices.add(anchorIndex);
+    dragState = {
+      start: point,
+      anchors: Array.from(selectedIndices, (index) => ({
+        index,
+        ...anchors[index],
+      })),
+    };
+  } else {
+    if (!event.shiftKey) selectedIndices.clear();
+    marquee = {
+      start: point,
+      current: point,
+      base: new Set(selectedIndices),
+    };
   }
+
+  isPointerDown = true;
+  canvas.setPointerCapture(event.pointerId);
+  event.preventDefault();
+  draw();
 });
 
-const stopPointerInteraction = () => {
+const stopPointerInteraction = (event) => {
   isPointerDown = false;
   activeHandle = null;
-  canvas.style.cursor = hoveredIndex === null ? "crosshair" : "grab";
+  dragState = null;
+  marquee = null;
+
+  if (event) {
+    const point = toCanvasPoint(event);
+    hoveredIndex = findNearestAnchor(point);
+  }
+
+  const isOverHandle =
+    event && findNearestHandle(toCanvasPoint(event)) !== null;
+  canvas.style.cursor =
+    hoveredIndex === null && !isOverHandle ? "crosshair" : "grab";
   draw();
 };
 
@@ -327,9 +413,11 @@ canvas.addEventListener("pointerleave", () => {
 });
 canvas.addEventListener("dblclick", () => {
   anchors = initialAnchors.map(([x, y]) => ({ x, y }));
-  selectedIndex = null;
+  selectedIndices.clear();
   hoveredIndex = null;
   activeHandle = null;
+  marquee = null;
+  dragState = null;
   draw();
 });
 
