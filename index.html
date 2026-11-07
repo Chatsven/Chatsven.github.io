@@ -27,11 +27,7 @@
     <script>
       document.documentElement.classList.add("js");
     </script>
-    <link
-      rel="stylesheet"
-      href="assets/vendor/swiper-bundle.min.css"
-    />
-    <link rel="stylesheet" href="styles.css?v=43" />
+    <link rel="stylesheet" href="styles.css?v=72" />
     <noscript>
       <style>
         .reveal {
@@ -124,6 +120,14 @@
             </div>
             <span class="cross cross-one" aria-hidden="true"></span>
             <span class="cross cross-two" aria-hidden="true"></span>
+            <img
+              class="orbit-pointer"
+              src="assets/icons/orbit-pointer.svg"
+              alt=""
+              width="343"
+              height="387"
+              aria-hidden="true"
+            />
           </div>
         </div>
 
@@ -203,31 +207,10 @@
         <span class="hero-snap hero-snap-three" aria-hidden="true"></span>
       </section>
 
-      <div class="ticker" aria-hidden="true">
-        <div class="ticker-track">
-          <span>WIKIMEDIA</span><i>✦</i>
-          <span>OPEN SOURCE</span><i>✦</i>
-          <span>WEB EXPERIENCE</span><i>✦</i>
-          <span>KNOWLEDGE</span><i>✦</i>
-          <span>WIKIMEDIA</span><i>✦</i>
-          <span>OPEN SOURCE</span><i>✦</i>
-          <span>WEB EXPERIENCE</span><i>✦</i>
-          <span>KNOWLEDGE</span><i>✦</i>
-        </div>
-      </div>
-
       <section class="work" id="work" aria-labelledby="work-title">
         <div class="work-inner">
           <div class="work-heading reveal">
-            <div>
-              <p class="work-kicker">01 · SELECTED WORK</p>
-              <h2 id="work-title">PROJECTS</h2>
-            </div>
-            <p class="work-counter" aria-live="polite">
-              <span data-project-current>01</span>
-              <span aria-hidden="true">/</span>
-              <span data-project-total>05</span>
-            </p>
+            <h2 id="work-title">PROJECTS</h2>
           </div>
 
           <div
@@ -238,12 +221,13 @@
             aria-roledescription="carousel"
             aria-label="精选作品相册"
           >
-            <div class="album-stage swiper" data-album-stage>
-              <div class="album-track swiper-wrapper" data-album-track>
+            <div class="album-stage" id="album-stage" data-album-stage>
+              <div class="album-track" data-album-track>
                 <div
-                  class="album-slide swiper-slide"
+                  class="album-slide"
                   data-project-slide
                   data-project-index="0"
+                  data-offset="0"
                 >
                   <button
                     class="album-card album-card-citizen"
@@ -252,77 +236,64 @@
                     aria-pressed="true"
                   >
                     <img
-                      src="assets/citizen-preview.jpg"
+                      src="assets/citizen-group-37.png?v=70"
                       alt=""
-                      width="1800"
-                      height="1128"
+                      width="2200"
+                      height="1381"
+                      decoding="async"
                     />
-                    <span class="album-card-code">01 / USERSCRIPT</span>
                   </button>
                 </div>
 
                 <div
-                  class="album-slide swiper-slide"
+                  class="album-slide album-slide-placeholder"
                   data-project-slide
                   data-project-index="1"
+                  data-offset="1"
                 >
                   <button
-                    class="album-card album-card-site"
+                    class="album-card album-card-placeholder"
                     type="button"
-                    aria-label="查看作品：澪空の自介站"
+                    aria-label="查看预留作品位 02"
                     aria-pressed="false"
                   >
                     <span
-                      class="album-cover-orbit"
+                      class="album-placeholder-mark"
                       aria-hidden="true"
                     ></span>
-                    <img
-                      class="album-cover-logo"
-                      src="assets/mio-logo.svg"
-                      alt=""
-                      width="316"
-                      height="108"
-                    />
                     <span class="album-cover-caption">
-                      WEB EXPERIENCE<br />2026
+                      RESERVED<br />FUTURE WORK
                     </span>
-                    <span class="album-card-code">02 / WEB</span>
                   </button>
                 </div>
 
                 <div
-                  class="album-slide swiper-slide"
+                  class="album-slide album-slide-placeholder"
                   data-project-slide
                   data-project-index="2"
+                  data-offset="2"
                 >
                   <button
-                    class="album-card album-card-archive"
+                    class="album-card album-card-placeholder"
                     type="button"
-                    aria-label="查看作品：更多开源项目"
+                    aria-label="查看预留作品位 03"
                     aria-pressed="false"
                   >
                     <span
-                      class="album-archive-grid"
+                      class="album-placeholder-mark"
                       aria-hidden="true"
                     ></span>
-                    <img
-                      class="album-cover-github"
-                      src="assets/icons/github.svg"
-                      alt=""
-                      width="44"
-                      height="44"
-                    />
                     <span class="album-cover-caption">
-                      OPEN SOURCE<br />ARCHIVE
+                      RESERVED<br />FUTURE WORK
                     </span>
-                    <span class="album-card-code">03 / GITHUB</span>
                   </button>
                 </div>
 
                 <div
-                  class="album-slide swiper-slide"
+                  class="album-slide album-slide-placeholder"
                   data-project-slide
                   data-project-index="3"
+                  data-offset="-2"
                 >
                   <button
                     class="album-card album-card-placeholder"
@@ -337,14 +308,14 @@
                     <span class="album-cover-caption">
                       RESERVED<br />FUTURE WORK
                     </span>
-                    <span class="album-card-code">04 / RESERVED</span>
                   </button>
                 </div>
 
                 <div
-                  class="album-slide swiper-slide"
+                  class="album-slide album-slide-placeholder"
                   data-project-slide
                   data-project-index="4"
+                  data-offset="-1"
                 >
                   <button
                     class="album-card album-card-placeholder"
@@ -359,50 +330,59 @@
                     <span class="album-cover-caption">
                       RESERVED<br />FUTURE WORK
                     </span>
-                    <span class="album-card-code">05 / RESERVED</span>
                   </button>
                 </div>
               </div>
             </div>
+
           </div>
 
           <div class="project-meta reveal" aria-live="polite">
-            <p class="project-type" data-project-type>
-              USERSCRIPT · JAVASCRIPT
-            </p>
-            <h3 data-project-title>Citizen Userscript for Wikimedia</h3>
-            <p class="project-description" data-project-description>
-              一个为维基媒体项目打造的 Citizen
-              界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。
-            </p>
-            <div class="project-meta-footer">
-              <div class="project-tags" data-project-tags aria-label="项目标签">
-                <span>MediaWiki</span>
-                <span>Open Source</span>
-                <span>UI</span>
-              </div>
+            <div class="project-meta-lead">
+              <h3 data-project-title>Citizen Userscript for Wikimedia</h3>
+              <p class="project-description" data-project-description>
+                一个为维基媒体项目打造的 Citizen
+                界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。
+              </p>
+            </div>
+
+            <div class="project-meta-side" role="group" aria-label="项目链接">
               <a
-                class="project-link"
+                class="hero-icon-link project-icon-link"
                 data-project-link
                 href="https://github.com/Chatsven/citizen-userscript-wikimedia"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="查看作品：Citizen Userscript for Wikimedia"
+                title="查看作品：Citizen Userscript for Wikimedia"
               >
-                <span>查看作品</span>
-                <span aria-hidden="true">↗</span>
+                <img
+                  class="hero-icon-fill"
+                  src="assets/icons/external-link-square.svg"
+                  alt=""
+                  width="44"
+                  height="44"
+                />
+              </a>
+
+              <a
+                class="hero-icon-link project-icon-link"
+                href="https://github.com/Chatsven?tab=repositories"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="在 GitHub 看更多"
+                title="在 GitHub 看更多"
+              >
+                <img
+                  class="hero-icon-fill"
+                  src="assets/icons/github.svg"
+                  alt=""
+                  width="44"
+                  height="44"
+                />
               </a>
             </div>
           </div>
-
-          <a
-            class="more-link reveal"
-            href="https://github.com/Chatsven?tab=repositories"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span>在 GitHub 看更多</span>
-            <span aria-hidden="true">↗</span>
-          </a>
         </div>
       </section>
 
@@ -454,7 +434,6 @@
       </div>
     </footer>
 
-    <script src="assets/vendor/swiper-bundle.min.js"></script>
-    <script src="script.js?v=46"></script>
+    <script src="script.js?v=72"></script>
   </body>
 </html>

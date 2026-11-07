@@ -661,55 +661,39 @@ const projectSlides = [
   ...document.querySelectorAll("[data-project-slide]"),
 ];
 const projectMeta = document.querySelector(".project-meta");
-const projectCurrent = document.querySelector("[data-project-current]");
-const projectTotal = document.querySelector("[data-project-total]");
-const projectType = document.querySelector("[data-project-type]");
 const projectTitle = document.querySelector("[data-project-title]");
 const projectDescription = document.querySelector(
   "[data-project-description]",
 );
-const projectTags = document.querySelector("[data-project-tags]");
 const projectLink = document.querySelector("[data-project-link]");
 const projects = [
   {
-    type: "USERSCRIPT · JAVASCRIPT",
     title: "Citizen Userscript for Wikimedia",
     description:
       "一个为维基媒体项目打造的 Citizen 界面用户脚本。无需更换皮肤，就能在基于 Vector 2022 的维基页面上使用更清爽的阅读与编辑体验。",
-    tags: ["MediaWiki", "Open Source", "UI"],
     href: "https://github.com/Chatsven/citizen-userscript-wikimedia",
   },
   {
-    type: "WEB EXPERIENCE · HTML",
-    title: "澪空の自介站",
-    description:
-      "以可变字体、动态网格与自适应动效构成的个人网站。视觉会随着浏览进度改变，也会按照装置性能选择合适的效果。",
-    tags: ["HTML", "CSS", "JavaScript"],
-    href: "https://mio.cool/",
-  },
-  {
-    type: "OPEN SOURCE · GITHUB",
-    title: "更多开源项目",
-    description:
-      "从维基媒体工具到网页实验，更多仍在维护与持续更新的作品都能在 GitHub 找到。",
-    tags: ["Open Source", "Web", "Ongoing"],
-    href: "https://github.com/Chatsven?tab=repositories",
-  },
-  {
-    type: "RESERVED · FUTURE WORK",
-    title: "预留作品位 04",
-    description:
-      "这个位置留给下一件正在构思的作品，内容与预览会在完成后补上。",
-    tags: ["Reserved", "Coming Soon"],
+    title: "预留作品位 02",
+    description: "预留展示位，后续作品完成后会在这里补上。",
     href: "",
     placeholder: true,
   },
   {
-    type: "RESERVED · FUTURE WORK",
+    title: "预留作品位 03",
+    description: "预留展示位，后续作品完成后会在这里补上。",
+    href: "",
+    placeholder: true,
+  },
+  {
+    title: "预留作品位 04",
+    description: "预留展示位，后续作品完成后会在这里补上。",
+    href: "",
+    placeholder: true,
+  },
+  {
     title: "预留作品位 05",
-    description:
-      "这是第二个预留展示位，用来保持专辑切换器完整的五格节奏。",
-    tags: ["Reserved", "Coming Soon"],
+    description: "预留展示位，后续作品完成后会在这里补上。",
     href: "",
     placeholder: true,
   },
@@ -720,82 +704,52 @@ if (
   albumStage &&
   projectSlides.length === projects.length &&
   projectMeta &&
-  projectCurrent &&
-  projectTotal &&
-  projectType &&
   projectTitle &&
   projectDescription &&
-  projectTags &&
-  projectLink &&
-  "Swiper" in window
+  projectLink
 ) {
+  const totalProjects = projects.length;
   let activeProject = -1;
   let projectMetaTimer = 0;
+  let displayPosition = 0;
+  let targetPosition = 0;
+  let animationFrame = 0;
+  let directRenderFrame = 0;
+  let lastFrameTime = 0;
+  let wheelEndTimer = 0;
+  let dragState = null;
+  let suppressProjectClick = false;
 
-  projectTotal.textContent = String(projects.length).padStart(2, "0");
+  const slideCards = projectSlides.map((slide) =>
+    slide.querySelector(".album-card"),
+  );
+  const slideIsPlaceholder = projectSlides.map((slide) =>
+    slide.classList.contains("album-slide-placeholder"),
+  );
 
-  const cloneProjectSlide = (source, projectIndex, setIndex) => {
-    const clone = source.cloneNode(true);
-    clone.dataset.projectIndex = String(projectIndex);
-    clone.dataset.projectSet = String(setIndex);
-    const card = clone.querySelector(".album-card");
-    card?.setAttribute("aria-hidden", "true");
-    card?.setAttribute("aria-pressed", "false");
-    if (card) card.tabIndex = -1;
-    return clone;
-  };
+  const wrapIndex = (index) =>
+    ((index % totalProjects) + totalProjects) % totalProjects;
 
-  projectSlides.forEach((slide, projectIndex) => {
-    slide.dataset.projectSet = "0";
-    slide.querySelector(".album-card")?.setAttribute(
-      "data-project-index",
-      String(projectIndex),
+  const ringOffset = (index, position) => {
+    return (
+      ((((index - position + totalProjects / 2) % totalProjects) +
+        totalProjects) %
+        totalProjects) -
+      totalProjects / 2
     );
-  });
-
-  for (let setIndex = 1; setIndex <= 2; setIndex += 1) {
-    const projectSet = document.createDocumentFragment();
-    projectSlides.forEach((slide, projectIndex) => {
-      projectSet.append(
-        cloneProjectSlide(slide, projectIndex, setIndex),
-      );
-    });
-    albumStage.querySelector(".swiper-wrapper").append(projectSet);
-  }
-
-  const carouselSlides = [
-    ...albumStage.querySelectorAll("[data-project-slide]"),
-  ];
-  carouselSlides
-    .slice(projects.length, projects.length * 2)
-    .forEach((slide) => {
-      const card = slide.querySelector(".album-card");
-      card?.removeAttribute("aria-hidden");
-      if (card) card.tabIndex = 0;
-    });
+  };
 
   const renderProjectMeta = (index) => {
     const project = projects[index];
-    projectCurrent.textContent = String(index + 1).padStart(2, "0");
-    projectType.textContent = project.type;
     projectTitle.textContent = project.title;
     projectDescription.textContent = project.description;
-    projectTags.replaceChildren(
-      ...project.tags.map((tag) => {
-        const element = document.createElement("span");
-        element.textContent = tag;
-        return element;
-      }),
-    );
     projectLink.hidden = Boolean(project.placeholder);
     projectLink.href = project.href || "#work";
     projectLink.setAttribute("aria-label", "查看作品：" + project.title);
+    projectLink.title = "查看作品：" + project.title;
   };
 
   const updateProjectMeta = (index, animate = true) => {
-    if (index === activeProject) return;
-    activeProject = index;
-    projectCurrent.textContent = String(index + 1).padStart(2, "0");
     window.clearTimeout(projectMetaTimer);
 
     if (!animate || reducedMotion) {
@@ -808,89 +762,267 @@ if (
     projectMetaTimer = window.setTimeout(() => {
       renderProjectMeta(index);
       projectMeta.classList.remove("is-refreshing");
-    }, 110);
+    }, 100);
   };
 
-  const syncActiveCard = (swiper) => {
-    const activeSlide = swiper.slides[swiper.activeIndex];
-    swiper.slides.forEach((slide) => {
-      const isActive = slide === activeSlide;
-      const card = slide.querySelector(".album-card");
-      card?.classList.toggle("is-active", isActive);
-      card?.setAttribute("aria-pressed", String(isActive));
-      card?.setAttribute("aria-hidden", String(!isActive));
-      if (card) card.tabIndex = isActive ? 0 : -1;
+  const renderPosition = () => {
+    const roundedIndex = wrapIndex(Math.round(displayPosition));
+    projectSlides.forEach((slide, index) => {
+      const offset = ringOffset(index, displayPosition);
+      const distance = Math.min(2.5, Math.abs(offset));
+      const sign = Math.sign(offset);
+      const nearDistance = Math.min(distance, 1);
+      const farDistance = Math.max(0, distance - 1);
+      const x = sign * (42 * nearDistance + 30 * farDistance);
+      const z = -120 * nearDistance - 120 * farDistance;
+      const rotation = -sign * (8 * nearDistance + 4 * farDistance);
+      const scale = 1 - 0.12 * nearDistance - 0.12 * farDistance;
+      const isActive = roundedIndex === index;
+      const isPlaceholder = slideIsPlaceholder[index];
+      const dim = isPlaceholder
+        ? 0
+        : Math.min(0.5, 0.18 * nearDistance + 0.24 * farDistance);
+
+      const dataOffset = String(
+        Math.max(-2, Math.min(2, Math.round(offset))),
+      );
+      if (slide.dataset.offset !== dataOffset) {
+        slide.dataset.offset = dataOffset;
+      }
+      slide.style.zIndex = String(
+        Math.max(1, 10 - Math.round(distance * 2)),
+      );
+      slide.style.transform =
+        "translate(-50%, -50%) translate3d(" +
+        x.toFixed(2) +
+        "%, 0, " +
+        z.toFixed(1) +
+        "px) rotateY(" +
+        rotation.toFixed(2) +
+        "deg) scale(" +
+        scale.toFixed(3) +
+        ")";
+
+      const card = slideCards[index];
+      card?.style.setProperty("--album-dim", dim.toFixed(3));
+      if (
+        card &&
+        card.getAttribute("aria-pressed") !== String(isActive)
+      ) {
+        card.setAttribute("aria-pressed", String(isActive));
+      }
+    });
+
+    if (roundedIndex === activeProject) return;
+    activeProject = roundedIndex;
+    updateProjectMeta(activeProject);
+  };
+
+  const runCarouselAnimation = () => {
+    if (animationFrame) return;
+
+    const step = (time) => {
+      if (!lastFrameTime) lastFrameTime = time;
+      const delta = Math.min((time - lastFrameTime) / 1000, 0.05);
+      lastFrameTime = time;
+      const difference = targetPosition - displayPosition;
+      displayPosition += difference * (1 - Math.exp(-15 * delta));
+
+      if (Math.abs(difference) < 0.0015) {
+        displayPosition = targetPosition;
+        renderPosition();
+        animationFrame = 0;
+        lastFrameTime = 0;
+        return;
+      }
+
+      renderPosition();
+      animationFrame = window.requestAnimationFrame(step);
+    };
+
+    animationFrame = window.requestAnimationFrame(step);
+  };
+
+  const animateTo = (position) => {
+    if (directRenderFrame) {
+      window.cancelAnimationFrame(directRenderFrame);
+      directRenderFrame = 0;
+    }
+    targetPosition = position;
+    runCarouselAnimation();
+  };
+
+  const stopCarouselAnimation = () => {
+    if (!animationFrame) return;
+    window.cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    lastFrameTime = 0;
+  };
+
+  const scheduleDirectRender = () => {
+    if (directRenderFrame) return;
+    directRenderFrame = window.requestAnimationFrame(() => {
+      directRenderFrame = 0;
+      displayPosition = targetPosition;
+      renderPosition();
     });
   };
 
-  const coverflow = new Swiper(albumStage, {
-    effect: "coverflow",
-    grabCursor: true,
-    centeredSlides: true,
-    slidesPerView: "auto",
-    loop: true,
-    initialSlide: projects.length,
-    loopAdditionalSlides: 2,
-    speed: 620,
-    watchSlidesProgress: true,
-    threshold: 6,
-    resistanceRatio: 0.68,
-    longSwipesRatio: 0.25,
-    touchStartPreventDefault: false,
-    coverflowEffect: {
-      rotate: 50,
-      stretch: 0,
-      depth: 100,
-      modifier: 1,
-      slideShadows: true,
-    },
-    mousewheel: {
-      forceToAxis: true,
-      releaseOnEdges: false,
-      sensitivity: 0.8,
-      thresholdDelta: 8,
-      thresholdTime: 320,
-    },
-    a11y: {
-      enabled: true,
-      prevSlideMessage: "上一件作品",
-      nextSlideMessage: "下一件作品",
-    },
-    on: {
-      init(swiper) {
-        const slide = swiper.slides[swiper.activeIndex];
-        activeProject = Number(slide.dataset.projectIndex);
-        renderProjectMeta(activeProject);
-        syncActiveCard(swiper);
-      },
-      slideChange(swiper) {
-        const slide = swiper.slides[swiper.activeIndex];
-        updateProjectMeta(Number(slide.dataset.projectIndex));
-        syncActiveCard(swiper);
-      },
-    },
-  });
+  const moveToProject = (index) => {
+    const currentIndex = wrapIndex(Math.round(displayPosition));
+    let offset = index - currentIndex;
+    if (offset > Math.floor(totalProjects / 2)) offset -= totalProjects;
+    if (offset < -Math.floor(totalProjects / 2)) offset += totalProjects;
+    animateTo(Math.round(displayPosition) + offset);
+  };
 
-  albumStage.addEventListener("click", (event) => {
-    const card = event.target.closest(".album-card");
-    const slide = card?.closest("[data-project-slide]");
-    if (!slide || slide.classList.contains("swiper-slide-active")) return;
-    coverflow.slideToLoop(Number(slide.dataset.projectIndex));
+  const moveByProject = (direction) => {
+    if (activeProject < 0) return;
+    moveToProject(activeProject + direction);
+  };
+
+  projectSlides.forEach((slide, index) => {
+    slide.querySelector(".album-card")?.addEventListener("click", () => {
+      if (suppressProjectClick) return;
+      if (Number(slide.dataset.offset) !== 0) moveToProject(index);
+    });
   });
 
   albumSwitcher.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      coverflow.slidePrev();
+      moveToProject(activeProject - 1);
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      coverflow.slideNext();
+      moveToProject(activeProject + 1);
     }
   });
 
-  albumSwitcher.dataset.swiperReady = "true";
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+    ) {
+      return;
+    }
+
+    if (
+      event.target instanceof Element &&
+      event.target.closest(
+        ".site-header, input, textarea, select, [contenteditable='true']",
+      )
+    ) {
+      return;
+    }
+
+    const workBounds = document
+      .querySelector("#work")
+      .getBoundingClientRect();
+    const viewportMiddle = window.innerHeight * 0.5;
+    if (
+      workBounds.top > viewportMiddle ||
+      workBounds.bottom < viewportMiddle
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    moveByProject(event.key === "ArrowLeft" ? -1 : 1);
+  });
+
+  albumStage.addEventListener(
+    "wheel",
+    (event) => {
+      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+      if (Math.abs(event.deltaX) < 0.1) return;
+      event.preventDefault();
+
+      stopCarouselAnimation();
+      targetPosition += event.deltaX * 0.008;
+      scheduleDirectRender();
+      window.clearTimeout(wheelEndTimer);
+      wheelEndTimer = window.setTimeout(() => {
+        animateTo(Math.round(targetPosition));
+      }, 90);
+    },
+    { passive: false },
+  );
+
+  albumStage.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPosition: displayPosition,
+      dragged: false,
+    };
+  });
+
+  albumStage.addEventListener(
+    "pointermove",
+    (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+      dragState.dragged = true;
+      albumSwitcher.classList.add("is-dragging");
+      if (!albumStage.hasPointerCapture(event.pointerId)) {
+        albumStage.setPointerCapture(event.pointerId);
+      }
+      displayPosition =
+        dragState.startPosition -
+        deltaX / Math.max(240, albumStage.clientWidth * 0.26);
+      targetPosition = displayPosition;
+      scheduleDirectRender();
+      event.preventDefault();
+    },
+    { passive: false },
+  );
+
+  const finishProjectDrag = (event) => {
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+
+    const dragged = dragState.dragged;
+    dragState = null;
+    albumSwitcher.classList.remove("is-dragging");
+
+    if (albumStage.hasPointerCapture(event.pointerId)) {
+      albumStage.releasePointerCapture(event.pointerId);
+    }
+
+    if (!dragged) return;
+    suppressProjectClick = true;
+    animateTo(Math.round(displayPosition));
+    window.setTimeout(() => {
+      suppressProjectClick = false;
+    }, 0);
+  };
+
+  albumStage.addEventListener("pointerup", finishProjectDrag);
+  albumStage.addEventListener("pointercancel", finishProjectDrag);
+  albumStage.addEventListener(
+    "click",
+    (event) => {
+      if (!suppressProjectClick) return;
+      suppressProjectClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    { capture: true },
+  );
+
+  renderPosition();
+  albumSwitcher.dataset.carouselReady = "true";
 }
 
 if (reducedMotion || !("IntersectionObserver" in window)) {
