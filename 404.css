@@ -17,16 +17,49 @@ body {
 }
 
 body {
+  position: relative;
   min-width: 20rem;
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 50% 44%, #ffffff 0, #f7fcfd 48%, #edf8fa 100%);
+  background: var(--paper);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+body::before,
+body::after {
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+body::before {
+  top: -18rem;
+  left: -12rem;
+  width: 44rem;
+  height: 44rem;
+  background: radial-gradient(
+    circle,
+    rgba(196, 242, 250, 0.78),
+    rgba(196, 242, 250, 0) 68%
+  );
+}
+
+body::after {
+  right: -14rem;
+  bottom: -22rem;
+  width: 46rem;
+  height: 46rem;
+  background: radial-gradient(
+    circle,
+    rgba(237, 213, 255, 0.62),
+    rgba(237, 213, 255, 0) 70%
+  );
 }
 
 a {
@@ -53,7 +86,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 2rem clamp(1.25rem, 5vw, 5rem);
+  padding: 3rem clamp(1.25rem, 5vw, 5rem);
 }
 
 .not-found-logo {
@@ -68,9 +101,11 @@ img {
 }
 
 .not-found-main {
+  position: relative;
+  z-index: 1;
   display: grid;
   min-height: 100svh;
-  padding: clamp(6rem, 10vh, 8rem) 1.25rem 2.5rem;
+  padding: clamp(3.5rem, 7vh, 5rem) 1.25rem clamp(2.5rem, 5vh, 4rem);
   place-items: center;
 }
 
@@ -79,37 +114,28 @@ img {
   align-items: center;
   flex-direction: column;
   width: 100%;
-  max-width: 56rem;
+  max-width: 44.1875rem;
   text-align: center;
-}
-
-.not-found-kicker {
-  margin: 0 0 0.85rem;
-  color: var(--muted);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.13em;
 }
 
 .not-found-content h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 560;
-  letter-spacing: -0.045em;
-  line-height: 1.12;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
 }
 
 .not-found-description {
-  margin: 0.9rem 0 0;
+  margin: 0.65rem 0 0;
   color: var(--muted);
   font-size: clamp(0.92rem, 1.5vw, 1rem);
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 .not-found-art {
-  width: min(100%, 44.1875rem);
-  margin: clamp(0.75rem, 2.2vh, 1.5rem) 0 0;
+  width: 100%;
+  margin: 0;
 }
 
 #not-found-canvas {
@@ -128,8 +154,8 @@ img {
   gap: 0.8rem;
   min-width: 10.5rem;
   min-height: 3rem;
-  margin-top: clamp(1rem, 2.4vh, 1.6rem);
-  padding: 0.75rem 1.4rem;
+  margin-top: clamp(2rem, 4.5vh, 2.35rem);
+  padding: 0.68rem 1.35rem;
   color: var(--paper);
   background: var(--ink);
   border: 1px solid var(--ink);
@@ -155,20 +181,29 @@ img {
   }
 
   .not-found-main {
-    padding-top: 5.5rem;
+    padding-top: 4.75rem;
     padding-bottom: 1.5rem;
   }
 
   .not-found-content h1 {
+    margin-top: 1.25rem;
     font-size: clamp(1.75rem, 9vw, 2.4rem);
   }
 
-  .not-found-art {
-    width: calc(100% + 1.5rem);
-    margin-right: -0.75rem;
-    margin-left: -0.75rem;
+  .not-found-description {
+    max-width: 20rem;
+    font-size: 0.86rem;
   }
 
+  .not-found-art {
+    width: calc(100% + 1rem);
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+  }
+
+  .not-found-button {
+    margin-top: 1.15rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
