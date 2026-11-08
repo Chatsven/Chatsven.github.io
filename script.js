@@ -1,11 +1,5 @@
 const siteHeader = document.querySelector("[data-site-header]");
 const siteFooter = document.querySelector(".footer");
-const navToggle = document.querySelector(".nav-toggle");
-const nav = document.querySelector("#site-nav");
-const navLinks = [...document.querySelectorAll("[data-nav-section]")];
-const navSections = navLinks
-  .map((link) => document.querySelector(`#${link.dataset.navSection}`))
-  .filter(Boolean);
 const buildTime = document.querySelector("[data-build-time]");
 
 if (buildTime) {
@@ -1065,36 +1059,6 @@ if (reducedMotion || !("IntersectionObserver" in window)) {
   });
 }
 
-const setNavigationOpen = (isOpen) => {
-  siteHeader.classList.toggle("nav-open", isOpen);
-  navToggle.setAttribute("aria-expanded", String(isOpen));
-  navToggle.setAttribute(
-    "aria-label",
-    isOpen ? "关闭导航菜单" : "打开导航菜单",
-  );
-};
-
-navToggle.addEventListener("click", () => {
-  setNavigationOpen(!siteHeader.classList.contains("nav-open"));
-});
-
-nav.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", () => setNavigationOpen(false));
-});
-
-document.addEventListener("click", (event) => {
-  if (!siteHeader.contains(event.target)) setNavigationOpen(false);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape" || !siteHeader.classList.contains("nav-open")) {
-    return;
-  }
-
-  setNavigationOpen(false);
-  navToggle.focus();
-});
-
 let scrollTicking = false;
 
 const updateHeader = () => {
@@ -1113,28 +1077,6 @@ const updateHeader = () => {
     siteFooter.getBoundingClientRect().top <= 2;
 
   siteHeader.classList.toggle("is-footer", isAtFooter);
-  if (
-    (isAtHero || isAtFooter) &&
-    siteHeader.classList.contains("nav-open")
-  ) {
-    setNavigationOpen(false);
-  }
-
-  if (currentScroll <= 80) setNavigationOpen(false);
-
-  const marker = currentScroll + window.innerHeight * 0.36;
-  let currentSection = null;
-
-  navSections.forEach((section) => {
-    if (section.offsetTop <= marker) currentSection = section;
-  });
-
-  navLinks.forEach((link) => {
-    const isActive = link.dataset.navSection === currentSection?.id;
-    link.classList.toggle("is-active", isActive);
-    if (isActive) link.setAttribute("aria-current", "location");
-    else link.removeAttribute("aria-current");
-  });
 
   scrollTicking = false;
 };
