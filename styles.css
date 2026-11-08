@@ -232,35 +232,57 @@ button {
   width: 2.1rem;
   height: 2.1rem;
   place-items: center;
+  color: #233f4a;
   border-radius: 50%;
   transition:
-    background-color 180ms ease,
+    color 180ms ease,
     transform 180ms ease;
 }
 
 .header-social-link:hover {
-  background: rgba(86, 197, 223, 0.14);
+  color: var(--deep-cyan);
 }
 
 .header-social-link:focus-visible {
-  background: rgba(86, 197, 223, 0.14);
+  color: var(--deep-cyan);
   outline: 2px solid var(--deep-cyan);
   outline-offset: 2px;
 }
 
 .header-social-icon {
   display: block;
-  width: 1.3rem;
-  height: 1.3rem;
-  filter: invert(1) hue-rotate(180deg) saturate(0.75) brightness(1.02);
-  transition:
-    filter 180ms ease,
-    transform 180ms ease;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+  transition: transform 180ms ease;
+}
+
+.header-social-github {
+  --icon: url("assets/icons/github-glyph.svg");
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.header-social-telegram {
+  --icon: url("assets/icons/telegram.svg");
+  width: 1.25rem;
+  height: 1.1rem;
+}
+
+.header-social-wikipedia {
+  --icon: url("assets/icons/wikipedia-glyph.svg");
+  width: 1.35rem;
+  height: 0.9rem;
+}
+
+.header-social-figma {
+  --icon: url("assets/icons/figma-glyph.svg");
+  width: 0.9rem;
+  height: 1.25rem;
 }
 
 .header-social-link:hover .header-social-icon,
 .header-social-link:focus-visible .header-social-icon {
-  filter: invert(1) hue-rotate(180deg) saturate(1.15) brightness(0.96);
   transform: translateY(-1px);
 }
 
@@ -1633,11 +1655,6 @@ h1 {
   .header-social-link {
     width: 1.9rem;
     height: 1.9rem;
-  }
-
-  .header-social-icon {
-    width: 1.2rem;
-    height: 1.2rem;
   }
 
   .hero {
