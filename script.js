@@ -1103,14 +1103,20 @@ const updateHeader = () => {
   const heroStoryEnd = heroStory
     ? heroStory.offsetTop + heroStory.offsetHeight
     : 0;
-  siteHeader.classList.toggle("is-scrolled", currentScroll >= heroStoryEnd);
+  const isAtHero = currentScroll < heroStoryEnd;
+
+  siteHeader.classList.toggle("is-hero", isAtHero);
+  siteHeader.classList.toggle("is-scrolled", !isAtHero);
 
   const isAtFooter =
     siteFooter !== null &&
     siteFooter.getBoundingClientRect().top <= 2;
 
   siteHeader.classList.toggle("is-footer", isAtFooter);
-  if (isAtFooter && siteHeader.classList.contains("nav-open")) {
+  if (
+    (isAtHero || isAtFooter) &&
+    siteHeader.classList.contains("nav-open")
+  ) {
     setNavigationOpen(false);
   }
 

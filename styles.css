@@ -184,6 +184,8 @@ button {
   backdrop-filter: none;
 }
 
+.site-header.is-hero .nav,
+.site-header.is-hero .nav-actions,
 .site-header.is-footer .nav,
 .site-header.is-footer .nav-actions {
   opacity: 0;
