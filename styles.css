@@ -273,16 +273,10 @@ button {
 .header-social-telegram::after {
   position: absolute;
   inset: 0;
-  background: #a9cad3;
+  background: #2e4953;
   -webkit-mask: url("assets/icons/telegram-fold.svg") center / contain no-repeat;
   mask: url("assets/icons/telegram-fold.svg") center / contain no-repeat;
   content: "";
-  transition: background-color 180ms ease;
-}
-
-.header-social-link:hover .header-social-telegram::after,
-.header-social-link:focus-visible .header-social-telegram::after {
-  background: #7fc2d0;
 }
 
 .header-social-wikipedia {
