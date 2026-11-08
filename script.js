@@ -1,10 +1,28 @@
 const siteHeader = document.querySelector("[data-site-header]");
+const siteFooter = document.querySelector(".footer");
 const navToggle = document.querySelector(".nav-toggle");
 const nav = document.querySelector("#site-nav");
 const navLinks = [...document.querySelectorAll("[data-nav-section]")];
 const navSections = navLinks
   .map((link) => document.querySelector(`#${link.dataset.navSection}`))
   .filter(Boolean);
+const buildTime = document.querySelector("[data-build-time]");
+
+if (buildTime) {
+  const modified = new Date(document.lastModified);
+
+  if (!Number.isNaN(modified.getTime())) {
+    const pad = (value) => String(value).padStart(2, "0");
+    buildTime.dateTime = modified.toISOString();
+    buildTime.textContent = `${modified.getUTCFullYear()}-${pad(
+      modified.getUTCMonth() + 1,
+    )}-${pad(modified.getUTCDate())} ${pad(
+      modified.getUTCHours(),
+    )}:${pad(modified.getUTCMinutes())}:${pad(
+      modified.getUTCSeconds(),
+    )} UTC`;
+  }
+}
 
 const isEditableTarget = (target) =>
   target instanceof Element &&
@@ -1086,6 +1104,15 @@ const updateHeader = () => {
     ? heroStory.offsetTop + heroStory.offsetHeight
     : 0;
   siteHeader.classList.toggle("is-scrolled", currentScroll >= heroStoryEnd);
+
+  const isAtFooter =
+    siteFooter !== null &&
+    siteFooter.getBoundingClientRect().top <= 2;
+
+  siteHeader.classList.toggle("is-footer", isAtFooter);
+  if (isAtFooter && siteHeader.classList.contains("nav-open")) {
+    setNavigationOpen(false);
+  }
 
   if (currentScroll <= 80) setNavigationOpen(false);
 
